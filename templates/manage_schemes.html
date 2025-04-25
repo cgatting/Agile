@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+
+{% block title %}Mutual Aid Scheme Management{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0 text-gray-800"><i class="fas fa-hands-helping me-2"></i>Mutual Aid Scheme Management</h1>
+                <a href="{{ url_for('create_scheme') }}" class="btn btn-primary"><i class="fas fa-plus me-2"></i>Create New Scheme</a>
+            </div>
+            
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">Active Schemes</h6>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="filter-active">Active</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="filter-inactive">Inactive</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="filter-all">All</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered" id="schemesTable" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>Scheme Name</th>
+                                    <th>Start Date</th>
+                                    <th>End Date</th>
+                                    <th>Contribution</th>
+                                    <th>Current Balance</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for scheme in schemes %}
+                                <tr class="scheme-row" data-status="{{ scheme.status }}">
+                                    <td>{{ scheme.name }}</td>
+                                    <td>{{ scheme.start_date.strftime('%Y-%m-%d') }}</td>
+                                    <td>{% if scheme.end_date %}{{ scheme.end_date.strftime('%Y-%m-%d') }}{% else %}Ongoing{% endif %}</td>
+                                    <td>£{{ "%.2f"|format(scheme.contribution_amount) }}</td>
+                                    <td>£{{ "%.2f"|format(scheme.balance) }}</td>
+                                    <td>
+                                        {% if scheme.status == 'active' %}
+                                        <span class="badge bg-success">Active</span>
+                                        {% elif scheme.status == 'inactive' %}
+                                        <span class="badge bg-secondary">Inactive</span>
+                                        {% elif scheme.status == 'pending' %}
+                                        <span class="badge bg-warning text-dark">Pending</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">{{ scheme.status }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <a href="{{ url_for('edit_scheme', scheme_id=scheme.id) }}" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-sm btn-outline-success add-funds" data-scheme-id="{{ scheme.id }}">
+                                                <i class="fas fa-plus-circle"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-xl-6 col-lg-6">
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">Mutual Aid Scheme Overview</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-pie pt-4 pb-2">
+                                <canvas id="schemeStatusChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-xl-6 col-lg-6">
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">Scheme Balance Summary</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col-6 text-center">
+                                    <div class="h4 mb-0 text-gray-800">Total Funds</div>
+                                    <div class="h3 mb-0 font-weight-bold text-gray-800" id="total-balance">£0.00</div>
+                                </div>
+                                <div class="col-6 text-center">
+                                    <div class="h4 mb-0 text-gray-800">Active Schemes</div>
+                                    <div class="h3 mb-0 font-weight-bold text-success" id="scheme-count">0</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Funds Modal -->
+<div class="modal fade" id="addFundsModal" tabindex="-1" aria-labelledby="addFundsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addFundsModalLabel">Add Funds to Scheme</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addFundsForm">
+                    <input type="hidden" id="scheme_id" name="scheme_id">
+                    <div class="mb-3">
+                        <label for="amount" class="form-label">Amount (£)</label>
+                        <input type="number" class="form-control" id="fund_amount" name="fund_amount" step="0.01" min="0" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Notes</label>
+                        <textarea class="form-control" id="fund_notes" name="fund_notes" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="submitAddFunds">Add Funds</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Calculate totals
+    let schemes = Array.from(document.querySelectorAll('.scheme-row'));
+    let totalBalance = 0;
+    let activeSchemes = 0;
+    let inactiveSchemes = 0;
+    let pendingSchemes = 0;
+    
+    schemes.forEach(scheme => {
+        let balance = parseFloat(scheme.cells[4].textContent.replace('£', ''));
+        let status = scheme.dataset.status;
+        
+        totalBalance += balance;
+        
+        if (status === 'active') {
+            activeSchemes++;
+        } else if (status === 'inactive') {
+            inactiveSchemes++;
+        } else if (status === 'pending') {
+            pendingSchemes++;
+        }
+    });
+    
+    document.getElementById('total-balance').textContent = `£${totalBalance.toFixed(2)}`;
+    document.getElementById('scheme-count').textContent = activeSchemes;
+    
+    // Setup chart
+    var ctx = document.getElementById('schemeStatusChart').getContext('2d');
+    var myPieChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Active', 'Inactive', 'Pending'],
+            datasets: [{
+                data: [activeSchemes, inactiveSchemes, pendingSchemes],
+                backgroundColor: ['#1cc88a', '#858796', '#f6c23e'],
+                hoverBackgroundColor: ['#17a673', '#717384', '#e3a820'],
+                hoverBorderColor: 'rgba(234, 236, 244, 1)',
+            }],
+        },
+        options: {
+            maintainAspectRatio: false,
+            tooltips: {
+                backgroundColor: "rgb(255,255,255)",
+                bodyFontColor: "#858796",
+                borderColor: '#dddfeb',
+                borderWidth: 1,
+                xPadding: 15,
+                yPadding: 15,
+                displayColors: false,
+                caretPadding: 10,
+            },
+            legend: {
+                display: true,
+                position: 'bottom'
+            },
+            cutoutPercentage: 70,
+        },
+    });
+    
+    // Filters
+    document.getElementById('filter-active').addEventListener('click', function() {
+        filterSchemes('active');
+    });
+    
+    document.getElementById('filter-inactive').addEventListener('click', function() {
+        filterSchemes('inactive');
+    });
+    
+    document.getElementById('filter-all').addEventListener('click', function() {
+        filterSchemes('all');
+    });
+    
+    function filterSchemes(status) {
+        schemes.forEach(scheme => {
+            if (status === 'all' || scheme.dataset.status === status) {
+                scheme.style.display = '';
+            } else {
+                scheme.style.display = 'none';
+            }
+        });
+    }
+    
+    // Add funds modal
+    let addFundsButtons = document.querySelectorAll('.add-funds');
+    addFundsButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            let schemeId = this.dataset.schemeId;
+            document.getElementById('scheme_id').value = schemeId;
+            let modal = new bootstrap.Modal(document.getElementById('addFundsModal'));
+            modal.show();
+        });
+    });
+    
+    // Submit add funds form
+    document.getElementById('submitAddFunds').addEventListener('click', function() {
+        // In a real application, this would submit to the server
+        alert('Funds would be added in a real implementation');
+        bootstrap.Modal.getInstance(document.getElementById('addFundsModal')).hide();
+    });
+});
+</script>
+{% endblock %}

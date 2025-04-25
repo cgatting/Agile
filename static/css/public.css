@@ -1,0 +1,438 @@
+/* Public Interface Styles */
+.public-nav {
+    background: #005288;
+}
+
+/* Marker popup styles */
+.marker-popup {
+    max-width: 250px;
+}
+
+.marker-popup h3 {
+    margin-top: 0;
+    margin-bottom: 8px;
+    color: #005288;
+}
+
+.marker-popup p {
+    margin: 5px 0;
+    font-size: 14px;
+}
+
+.marker-popup .primary-btn {
+    margin-top: 10px;
+    padding: 8px 12px;
+    background: #ff6b00;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    width: 100%;
+    text-align: center;
+    transition: background-color 0.2s;
+}
+
+.marker-popup .primary-btn:hover {
+    background: #ff8533;
+}
+
+/* Bowser card styles */
+.bowser-card {
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.bowser-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+}
+
+.bowser-card-header {
+    padding: 15px;
+    background-color: #005288;
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.bowser-card-header h3 {
+    margin: 0;
+    font-size: 18px;
+}
+
+.bowser-card-body {
+    padding: 15px;
+}
+
+.bowser-card-footer {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 15px;
+    background-color: #f5f5f5;
+    border-top: 1px solid #e0e0e0;
+}
+
+.bowser-card-footer .btn {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.bowser-card-footer .btn i {
+    font-size: 16px;
+}
+
+.bowser-card-footer .btn-details {
+    background-color: #e3f2fd;
+    color: #0277bd;
+}
+
+.bowser-card-footer .btn-details:hover {
+    background-color: #0277bd;
+    color: white;
+}
+
+.bowser-card-footer .btn-edit {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+}
+
+.bowser-card-footer .btn-edit:hover {
+    background-color: #2e7d32;
+    color: white;
+}
+
+.bowser-card-footer .btn-deploy {
+    background-color: #fff3e0;
+    color: #ef6c00;
+}
+
+.bowser-card-footer .btn-deploy:hover {
+    background-color: #ef6c00;
+    color: white;
+}
+
+/* Emergency Banner */
+.emergency-banner {
+    background: #ff3d00;
+    color: white;
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.emergency-banner .close-banner {
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.2em;
+    cursor: pointer;
+}
+
+/* Hero Section */
+.hero-section {
+    background: linear-gradient(rgba(0, 82, 136, 0.9), rgba(0, 82, 136, 0.9)),
+                url('../images/water-bg.jpg');
+    background-size: cover;
+    background-position: center;
+    color: white;
+    padding: 60px 20px;
+    text-align: center;
+}
+
+.hero-content {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.hero-content h1 {
+    font-size: 2.5em;
+    margin-bottom: 30px;
+}
+
+.search-container {
+    display: flex;
+    gap: 10px;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.search-container input {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    border-radius: 4px;
+    font-size: 1.1em;
+}
+
+.search-btn {
+    padding: 12px 24px;
+    background: #ff6b00;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1.1em;
+    transition: background-color 0.2s;
+}
+
+.search-btn:hover {
+    background: #ff8533;
+}
+
+/* Map Section */
+.map-section {
+    padding: 40px 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.filters {
+    display: flex;
+    gap: 10px;
+}
+
+.map-container {
+    height: 500px;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+
+.bowser-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.bowser-card {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.bowser-status {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    margin-bottom: 10px;
+}
+
+.status-available { background: #e8f5e9; color: #2e7d32; }
+.status-refilling { background: #fff3e0; color: #ef6c00; }
+.status-maintenance { background: #ffebee; color: #c62828; }
+
+/* Report Section */
+.report-section {
+    background: #f5f5f5;
+    padding: 40px 20px;
+}
+
+.report-container {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.report-form {
+    background: white;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Highlight animation for the form when navigated to from a marker */
+@keyframes highlight-pulse {
+    0% { box-shadow: 0 0 0 0 rgba(255, 107, 0, 0.7); }
+    70% { box-shadow: 0 0 0 15px rgba(255, 107, 0, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(255, 107, 0, 0); }
+}
+
+.highlight-form {
+    animation: highlight-pulse 1.5s ease-out 2;
+    border: 2px solid #ff6b00;
+    transition: all 0.3s ease;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1em;
+}
+
+.submit-btn {
+    width: 100%;
+    padding: 12px;
+    background: #005288;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 1.1em;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.submit-btn:hover {
+    background: #006bb3;
+}
+
+/* Alerts Section */
+.alerts-section {
+    padding: 40px 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.alerts-container {
+    display: grid;
+    gap: 20px;
+}
+
+.alert-card {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+}
+
+.alert-icon {
+    font-size: 1.5em;
+}
+
+.alert-content {
+    flex: 1;
+}
+
+.alert-time {
+    color: #666;
+    font-size: 0.9em;
+}
+
+.alert-emergency { color: #c62828; }
+.alert-warning { color: #ef6c00; }
+.alert-info { color: #1565c0; }
+
+/* Subscribe Section */
+.subscribe-section {
+    background: #e3f2fd;
+    padding: 40px 20px;
+    text-align: center;
+}
+
+.subscribe-container {
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.notification-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
+    margin: 20px 0;
+}
+
+/* Footer */
+.public-footer {
+    background: #005288;
+    color: white;
+    padding: 40px 20px 20px;
+}
+
+.footer-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 40px;
+    margin-bottom: 40px;
+}
+
+.footer-section h3 {
+    margin-bottom: 15px;
+}
+
+.footer-section a {
+    color: white;
+    text-decoration: none;
+    display: block;
+    margin-bottom: 10px;
+}
+
+.footer-section a:hover {
+    text-decoration: underline;
+}
+
+.footer-bottom {
+    text-align: center;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .hero-content h1 {
+        font-size: 2em;
+    }
+
+    .search-container {
+        flex-direction: column;
+    }
+
+    .section-header {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+    }
+
+    .filters {
+        width: 100%;
+        flex-direction: column;
+    }
+
+    .map-container {
+        height: 300px;
+    }
+
+    .footer-content {
+        grid-template-columns: 1fr;
+        text-align: center;
+    }
+}

@@ -1,0 +1,15 @@
+Flask==2.0.1
+Flask-SQLAlchemy==2.5.1
+Flask-Migrate==4.0.5
+Flask-Login==0.5.0
+gunicorn==21.2.0
+python-dotenv==1.0.0
+Werkzeug==2.0.1 # Must match Flask version
+SQLAlchemy==1.4.41 # Compatible with Flask-SQLAlchemy 2.5.1
+pytest==7.0.1
+colorama==0.4.6 # For colored terminal output
+coverage==7.3.2 # For code coverage reporting
+playwright==1.48.0
+pytest-playwright==0.5.2
+pytest-json-report==1.5.0
+Jinja2==3.0.1

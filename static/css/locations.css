@@ -1,0 +1,209 @@
+/* Locations Page Styles */
+.locations-container {
+    padding: var(--spacing-md);
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* Content Grid Layout */
+.content-grid {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+    margin-top: var(--spacing-lg);
+}
+
+@media (min-width: 1024px) {
+    .content-grid {
+        flex-direction: row;
+        align-items: flex-start;
+    }
+
+    .map-section {
+        flex: 1.5;
+        position: sticky;
+        top: calc(var(--spacing-xl) + 60px);
+    }
+
+    .locations-section {
+        flex: 1;
+    }
+}
+
+/* Map Container */
+.map-container {
+    background: var(--neutral-100);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+}
+
+#locationsMap {
+    height: 300px;
+    width: 100%;
+}
+
+@media (min-width: 768px) {
+    #locationsMap {
+        height: 400px;
+    }
+}
+
+@media (min-width: 1024px) {
+    #locationsMap {
+        height: 600px;
+    }
+}
+
+/* Locations List */
+.locations-list {
+    margin-top: var(--spacing-lg);
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--spacing-md);
+}
+
+@media (min-width: 640px) and (max-width: 1023px) {
+    .locations-list {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Location Card */
+.location-card {
+    background: white;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.location-card:hover {
+    transform: translateY(-2px);
+}
+
+.location-type {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+
+.type-healthcare { background: #4CAF50; color: white; }
+.type-emergency { background: #FF9800; color: white; }
+.type-residential { background: #2196F3; color: white; }
+.type-commercial { background: #9C27B0; color: white; }
+
+.location-status {
+    margin: 8px 0;
+    display: flex;
+    align-items: center;
+}
+
+.status-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 8px;
+}
+
+.status-high { background: #FF4444; }
+.status-medium { background: #FFA500; }
+.status-low { background: #4CAF50; }
+
+.bowser-count {
+    margin-top: 8px;
+    color: #666;
+    font-size: 14px;
+}
+
+.bowser-count i {
+    margin-right: 4px;
+    color: #2196F3;
+}
+
+.location-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: var(--spacing-sm);
+}
+
+.location-title {
+    margin: 0;
+    color: var(--primary-dark);
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.location-status {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--radius-sm);
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.status-active { background-color: var(--success); color: white; }
+.status-planned { background-color: var(--info); color: white; }
+.status-inactive { background-color: var(--danger); color: white; }
+
+.location-details {
+    margin-top: var(--spacing-sm);
+    font-size: 0.9rem;
+    color: var(--neutral-600);
+}
+
+.location-address {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-xs);
+    margin-bottom: var(--spacing-xs);
+}
+
+.location-address i {
+    color: var(--primary);
+    margin-top: 0.2rem;
+}
+
+.location-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-md);
+}
+
+/* Form Grid */
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--spacing-md);
+}
+
+@media (min-width: 640px) {
+    .form-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.full-width {
+    grid-column: 1 / -1;
+}
+
+/* Touch Device Optimizations */
+@media (hover: none) {
+    .location-card:hover {
+        transform: none;
+        box-shadow: var(--shadow-md);
+    }
+
+    .location-actions {
+        gap: var(--spacing-md);
+    }
+
+    .btn {
+        padding: var(--spacing-md);
+    }
+}

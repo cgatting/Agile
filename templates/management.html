@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+
+{% block title %}Bowser Management{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/management.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/responsive.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/modern.css') }}">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+
+    <main class="management-container">
+        <header class="page-header">
+            <h1><i class="fas fa-truck-container"></i> Bowser Fleet Management</h1>
+            <div class="header-actions">
+                <button class="btn primary-btn" id="addBowserBtn">
+                    <i class="fas fa-plus"></i>
+                    <span>Add New Bowser</span>
+                </button>
+            </div>
+        </header>
+        
+        <section class="filters-section">
+            <div class="search-container">
+                <div class="input-group">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="searchBowser" placeholder="Search bowsers by ID, location, or status...">
+                </div>
+            </div>
+            <div class="filters-grid">
+                <div class="input-group">
+                    <label for="statusFilter"><i class="fas fa-info-circle"></i> Status</label>
+                    <select id="statusFilter" class="w-full">
+                        <option value="">All Statuses</option>
+                        <option value="active">Active</option>
+                        <option value="maintenance">In Maintenance</option>
+                        <option value="inactive">Inactive</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label for="locationFilter"><i class="fas fa-map-marker-alt"></i> Location</label>
+                    <select id="locationFilter" class="w-full">
+                        <option value="">All Locations</option>
+                        <option value="north">North Region</option>
+                        <option value="south">South Region</option>
+                        <option value="east">East Region</option>
+                        <option value="west">West Region</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label for="capacityFilter"><i class="fas fa-tint"></i> Capacity</label>
+                    <select id="capacityFilter" class="w-full">
+                        <option value="">All Capacities</option>
+                        <option value="small">Small (< 5000L)</option>
+                        <option value="medium">Medium (5000L - 10000L)</option>
+                        <option value="large">Large (> 10000L)</option>
+                    </select>
+                </div>
+            </div>
+        </section>
+
+        <div id="loadingIndicator" class="loading" style="display: none;">
+            <div class="loading-spinner"></div>
+        </div>
+        
+        <div class="bowser-grid" id="bowserGrid">
+            <!-- Bowser cards will be dynamically inserted here -->
+        </div>
+        
+        <div id="emptyState" class="empty-state" style="display: none;">
+            <i class="fas fa-truck-container fa-3x"></i>
+            <h3>No Bowsers Found</h3>
+            <p>There are no bowsers matching your current filters. Try adjusting your search criteria or add a new bowser.</p>
+            <button class="btn primary-btn" id="emptyStateAddBtn">
+                <i class="fas fa-plus"></i>
+                <span>Add New Bowser</span>
+            </button>
+        </div>
+    </main>
+
+    <!-- Add/Edit Bowser Modal -->
+    <div class="modal" id="bowserModal" style="display: none;">
+        <div class="modal-header">
+            <h2 id="modalTitle">Add New Bowser</h2>
+            <button class="modal-close" id="closeModal">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <form id="bowserForm">
+                <div class="input-group">
+                    <label for="bowserId"><i class="fas fa-hashtag"></i> Bowser ID</label>
+                    <input type="text" id="bowserId" required placeholder="Enter bowser ID (e.g., BWS001)">
+                </div>
+                <div class="input-group">
+                    <label for="bowserCapacity"><i class="fas fa-tint"></i> Capacity (Liters)</label>
+                    <input type="number" id="bowserCapacity" required placeholder="Enter capacity">
+                </div>
+                <div class="input-group">
+                    <label for="bowserCurrentLevel"><i class="fas fa-fill"></i> Current Level (Liters)</label>
+                    <input type="number" id="bowserCurrentLevel" required placeholder="Enter current water level">
+                </div>
+                <div class="input-group">
+                    <label for="bowserOwner"><i class="fas fa-user"></i> Owner</label>
+                    <input type="text" id="bowserOwner" placeholder="Enter owner (e.g., North Region)">
+                </div>
+                <div class="input-group">
+                    <label for="bowserLocation"><i class="fas fa-map-marker-alt"></i> Current Location</label>
+                    <select id="bowserLocation" required>
+                        <option value="">Select location</option>
+                        <option value="north">North Region</option>
+                        <option value="south">South Region</option>
+                        <option value="east">East Region</option>
+                        <option value="west">West Region</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label for="bowserStatus"><i class="fas fa-info-circle"></i> Status</label>
+                    <select id="bowserStatus" required>
+                        <option value="active">Active</option>
+                        <option value="maintenance">In Maintenance</option>
+                        <option value="inactive">Inactive</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label for="bowserLastMaintenance"><i class="fas fa-tools"></i> Last Maintenance Date</label>
+                    <input type="date" id="bowserLastMaintenance">
+                </div>
+                <div class="input-group">
+                    <label for="bowserNotes"><i class="fas fa-sticky-note"></i> Notes</label>
+                    <textarea id="bowserNotes" rows="3" placeholder="Enter any additional notes"></textarea>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn secondary-btn" id="cancelBtn">Cancel</button>
+            <button class="btn primary-btn" id="saveBtn">Save Changes</button>
+        </div>
+    </div>
+    
+    <!-- View Bowser Details Modal -->
+    <div class="modal" id="bowserDetailsModal" style="display: none;">
+        <div class="modal-header">
+            <h2 id="detailsModalTitle">Bowser Details</h2>
+            <button class="modal-close" id="closeDetailsModal">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body" id="bowserDetailsContent">
+            <!-- Details will be dynamically inserted here -->
+        </div>
+        <div class="modal-footer">
+            <button class="btn secondary-btn" id="closeDetailsBtn">Close</button>
+            <button class="btn primary-btn" id="editFromDetailsBtn">Edit Bowser</button>
+        </div>
+    </div>
+    
+    <!-- Toast Notifications Container -->
+    <div class="toast-container" id="toastContainer">
+        <!-- Toasts will be dynamically inserted here -->
+    </div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/config.js') }}"></script>
+<script src="{{ url_for('static', filename='js/mock-data.js') }}"></script>
+<script src="{{ url_for('static', filename='js/utils.js') }}"></script>
+<script src="{{ url_for('static', filename='js/data.js') }}"></script>
+<script src="{{ url_for('static', filename='js/management.js') }}"></script>
+{% endblock %}

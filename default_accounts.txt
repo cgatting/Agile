@@ -1,0 +1,31 @@
+Default System Accounts
+
+These accounts are created in the database by default. CHANGE THESE PASSWORDS IMMEDIATELY AFTER FIRST LOGIN.
+
+1. Administrator Account
+   Username: admin
+   Password: Admin@123
+   Role: admin
+   Email: admin@aquaalert.com
+   Note: Full system access
+
+2. Staff Account
+   Username: staff
+   Password: Staff@123
+   Role: staff
+   Email: staff@aquaalert.com
+   Note: Operational management access
+
+3. Regular User Account
+   Username: user
+   Password: User@123
+   Role: user
+   Email: user@aquaalert.com
+   Note: Basic system access
+
+SECURITY WARNING:
+- These are DEFAULT credentials
+- Change all passwords immediately after first login
+- Do not use these passwords in production
+- Delete this file after setting up the system
+- Consider disabling these accounts after creating new ones 

@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+
+{% block title %}Update Emergency Priority{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0 text-gray-800"><i class="fas fa-exclamation-triangle me-2"></i>Update Emergency Priority</h1>
+                <a href="{{ url_for('emergency_priority') }}" class="btn btn-secondary"><i class="fas fa-arrow-left me-2"></i>Back to Priorities</a>
+            </div>
+            
+            <div class="row mb-4">
+                <div class="col-xl-6">
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">Deployment Information</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <h6 class="font-weight-bold">Bowser:</h6>
+                                    <p>{{ deployment.bowser.number }}</p>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <h6 class="font-weight-bold">Location:</h6>
+                                    <p>{{ deployment.location.name }}</p>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <h6 class="font-weight-bold">Start Date:</h6>
+                                    <p>{{ deployment.start_date.strftime('%Y-%m-%d') }}</p>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <h6 class="font-weight-bold">End Date:</h6>
+                                    <p>{% if deployment.end_date %}{{ deployment.end_date.strftime('%Y-%m-%d') }}{% else %}Ongoing{% endif %}</p>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <h6 class="font-weight-bold">Current Priority:</h6>
+                                    <p>
+                                        {% if deployment.priority == 'emergency' %}
+                                        <span class="badge bg-danger">Emergency</span>
+                                        {% elif deployment.priority == 'high' %}
+                                        <span class="badge bg-warning text-dark">High</span>
+                                        {% elif deployment.priority == 'normal' %}
+                                        <span class="badge bg-primary">Normal</span>
+                                        {% elif deployment.priority == 'low' %}
+                                        <span class="badge bg-success">Low</span>
+                                        {% endif %}
+                                    </p>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <h6 class="font-weight-bold">Priority Score:</h6>
+                                    <div class="progress">
+                                        <div class="progress-bar 
+                                            {% if deployment.priority_score >= 90 %}bg-danger
+                                            {% elif deployment.priority_score >= 60 %}bg-warning
+                                            {% elif deployment.priority_score >= 30 %}bg-primary
+                                            {% else %}bg-success{% endif %}" 
+                                            role="progressbar" style="width: {{ deployment.priority_score }}%" 
+                                            aria-valuenow="{{ deployment.priority_score }}" aria-valuemin="0" aria-valuemax="100">
+                                            {{ deployment.priority_score }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-xl-6">
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">Current Emergency Details</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    <h6 class="font-weight-bold">Emergency Reason:</h6>
+                                    <p>{{ deployment.emergency_reason or 'None specified' }}</p>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <h6 class="font-weight-bold">Population Affected:</h6>
+                                    <p>{{ deployment.population_affected or 'Not specified' }}</p>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <h6 class="font-weight-bold">Expected Duration:</h6>
+                                    <p>{{ deployment.expected_duration or 'Not specified' }} days</p>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <h6 class="font-weight-bold">Alternative Sources:</h6>
+                                    <p>{% if deployment.alternative_sources %}Yes{% else %}No{% endif %}</p>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <h6 class="font-weight-bold">Vulnerability Index:</h6>
+                                    <p>{{ deployment.vulnerability_index or 'Not specified' }}/10</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Update Priority Details</h6>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('update_priority', deployment_id=deployment.id) }}">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="priority" class="form-label">Priority Level</label>
+                                <select class="form-select" id="priority" name="priority" required>
+                                    <option value="low" {% if deployment.priority == 'low' %}selected{% endif %}>Low</option>
+                                    <option value="normal" {% if deployment.priority == 'normal' %}selected{% endif %}>Normal</option>
+                                    <option value="high" {% if deployment.priority == 'high' %}selected{% endif %}>High</option>
+                                    <option value="emergency" {% if deployment.priority == 'emergency' %}selected{% endif %}>Emergency</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="emergency_reason" class="form-label">Emergency Reason</label>
+                                <input type="text" class="form-control" id="emergency_reason" name="emergency_reason" value="{{ deployment.emergency_reason or '' }}">
+                                <small class="form-text text-muted">Required for emergency priority</small>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="population_affected" class="form-label">Estimated Population Affected</label>
+                                <input type="number" class="form-control" id="population_affected" name="population_affected" min="0" value="{{ deployment.population_affected or '' }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="expected_duration" class="form-label">Expected Duration (days)</label>
+                                <input type="number" class="form-control" id="expected_duration" name="expected_duration" min="1" value="{{ deployment.expected_duration or '' }}">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" id="alternative_sources" name="alternative_sources" {% if deployment.alternative_sources %}checked{% endif %}>
+                                    <label class="form-check-label" for="alternative_sources">Alternative water sources available</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="vulnerability_index" class="form-label">Vulnerability Index (0-10)</label>
+                                <input type="range" class="form-range" id="vulnerability_index" name="vulnerability_index" min="0" max="10" value="{{ deployment.vulnerability_index or 5 }}">
+                                <div class="d-flex justify-content-between">
+                                    <small>Low</small>
+                                    <small id="vulnerability_value">{{ deployment.vulnerability_index or 5 }}</small>
+                                    <small>High</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary"><i class="fas fa-save me-2"></i>Update Priority</button>
+                                <a href="{{ url_for('emergency_priority') }}" class="btn btn-secondary ms-2">Cancel</a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Priority Calculation</h6>
+                </div>
+                <div class="card-body">
+                    <p>The priority score is calculated based on the following factors:</p>
+                    <ul>
+                        <li><strong>Priority Level:</strong> Base value (Low=0, Normal=25, High=50, Emergency=75)</li>
+                        <li><strong>Population Affected:</strong> Higher population increases priority</li>
+                        <li><strong>Expected Duration:</strong> Longer durations increase priority</li>
+                        <li><strong>Alternative Sources:</strong> Availability decreases priority</li>
+                        <li><strong>Vulnerability Index:</strong> Higher vulnerability increases priority</li>
+                    </ul>
+                    <p>The system automatically calculates the final priority score when you update these values.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Update vulnerability value display
+    document.getElementById('vulnerability_index').addEventListener('input', function() {
+        document.getElementById('vulnerability_value').textContent = this.value;
+    });
+    
+    // Show/hide emergency reason based on priority
+    document.getElementById('priority').addEventListener('change', function() {
+        const emergencyReasonField = document.getElementById('emergency_reason');
+        if (this.value === 'emergency') {
+            emergencyReasonField.setAttribute('required', '');
+            emergencyReasonField.parentElement.classList.add('required');
+        } else {
+            emergencyReasonField.removeAttribute('required');
+            emergencyReasonField.parentElement.classList.remove('required');
+        }
+    });
+    
+    // Trigger initial validation
+    document.getElementById('priority').dispatchEvent(new Event('change'));
+});
+</script>
+{% endblock %}

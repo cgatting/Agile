@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AquaAlert Test Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border-radius: 5px;
+            background-color: #f8f9fa;
+        }
+        .test-section h3 {
+            margin-bottom: 15px;
+            color: #0056b3;
+        }
+        .test-item {
+            padding: 10px;
+            margin-bottom: 10px;
+            border-left: 4px solid #0056b3;
+            background-color: #fff;
+        }
+        .test-button {
+            margin-top: 20px;
+        }
+        .result-box {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            background-color: #f0f0f0;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .success {
+            color: #28a745;
+        }
+        .failure {
+            color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="#">AquaAlert Testing</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ml-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/management">Management</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <h1 class="mb-4">AquaAlert Automated Testing Dashboard</h1>
+        <p class="lead">This dashboard provides access to all automated tests for the AquaAlert Emergency Water Bowser Management System.</p>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="test-section">
+                    <h3>Backend Tests</h3>
+                    <p>Python tests using unittest framework for testing backend functionality.</p>
+                    
+                    <div class="test-item">
+                        <h5>Core Tests</h5>
+                        <p>Tests for basic application functionality and routes.</p>
+                        <button id="run-core-tests" class="btn btn-primary test-button">Run Core Tests</button>
+                    </div>
+                    
+                    <div class="test-item">
+                        <h5>Financial Module Tests</h5>
+                        <p>Tests for financial management functionality, including mutual aid schemes, partners, and invoices.</p>
+                        <button id="run-financial-tests" class="btn btn-primary test-button">Run Financial Tests</button>
+                    </div>
+                    
+                    <div class="test-item">
+                        <h5>All Backend Tests</h5>
+                        <p>Run all backend test suites.</p>
+                        <button id="run-all-backend-tests" class="btn btn-success test-button">Run All Backend Tests</button>
+                    </div>
+                    
+                    <div class="result-box" id="backend-results">
+                        <p>Test results will appear here...</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="test-section">
+                    <h3>Frontend Tests</h3>
+                    <p>JavaScript tests using Mocha and Chai for testing frontend functionality.</p>
+                    
+                    <div class="test-item">
+                        <h5>Utility Functions Tests</h5>
+                        <p>Tests for utility functions like date formatting, validation, and filtering.</p>
+                        <a href="/static/js/tests/test_runner.html" class="btn btn-primary test-button" target="_blank">Run JavaScript Tests</a>
+                    </div>
+                    
+                    <div class="test-item">
+                        <h5>Test Coverage</h5>
+                        <p>Coverage report for JavaScript tests (if available).</p>
+                        <button id="view-coverage" class="btn btn-primary test-button">View Coverage</button>
+                    </div>
+                    
+                    <div class="result-box" id="frontend-results">
+                        <p>For JavaScript tests, please use the button above to open the test runner in a new tab.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="test-section">
+                    <h3>Test Documentation</h3>
+                    <p>Learn more about the automated testing system for AquaAlert.</p>
+                    
+                    <div class="test-item">
+                        <h5>Testing Guide</h5>
+                        <p>Documentation for running tests and adding new test cases.</p>
+                        <a href="/testing_guide" class="btn btn-info test-button">View Testing Guide</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/jquery-3.5.1.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+    <script>
+        $(document).ready(function() {
+            // Run core tests
+            $('#run-core-tests').click(function() {
+                const resultsBox = $('#backend-results');
+                resultsBox.html('<p>Running core tests...</p>');
+                
+                $.ajax({
+                    url: '/run_tests/core',
+                    method: 'GET',
+                    success: function(data) {
+                        resultsBox.html('<pre>' + data.output + '</pre>');
+                        if (data.success) {
+                            resultsBox.append('<p class="success"><strong>✓ All tests passed!</strong></p>');
+                        } else {
+                            resultsBox.append('<p class="failure"><strong>✗ Some tests failed!</strong></p>');
+                        }
+                    },
+                    error: function() {
+                        resultsBox.html('<p class="failure">Error running tests. Please check the server logs.</p>');
+                    }
+                });
+            });
+            
+            // Run financial tests
+            $('#run-financial-tests').click(function() {
+                const resultsBox = $('#backend-results');
+                resultsBox.html('<p>Running financial tests...</p>');
+                
+                $.ajax({
+                    url: '/run_tests/financial_api',
+                    method: 'GET',
+                    success: function(data) {
+                        resultsBox.html('<pre>' + data.output + '</pre>');
+                        if (data.success) {
+                            resultsBox.append('<p class="success"><strong>✓ All tests passed!</strong></p>');
+                        } else {
+                            resultsBox.append('<p class="failure"><strong>✗ Some tests failed!</strong></p>');
+                        }
+                    },
+                    error: function() {
+                        resultsBox.html('<p class="failure">Error running tests. Please check the server logs.</p>');
+                    }
+                });
+            });
+            
+            // Run all backend tests
+            $('#run-all-backend-tests').click(function() {
+                const resultsBox = $('#backend-results');
+                resultsBox.html('<p>Running all backend tests...</p>');
+                
+                $.ajax({
+                    url: '/run_tests/all',
+                    method: 'GET',
+                    success: function(data) {
+                        resultsBox.html('<pre>' + data.output + '</pre>');
+                        if (data.success) {
+                            resultsBox.append('<p class="success"><strong>✓ All tests passed!</strong></p>');
+                        } else {
+                            resultsBox.append('<p class="failure"><strong>✗ Some tests failed!</strong></p>');
+                        }
+                    },
+                    error: function() {
+                        resultsBox.html('<p class="failure">Error running tests. Please check the server logs.</p>');
+                    }
+                });
+            });
+            
+            // View coverage report
+            $('#view-coverage').click(function() {
+                $('#frontend-results').html('<p>Coverage reporting is not yet implemented.</p>');
+            });
+        });
+    </script>
+</body>
+</html>

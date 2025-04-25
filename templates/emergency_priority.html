@@ -1,0 +1,353 @@
+{% extends "base.html" %}
+
+{% block title %}Emergency Priority Management{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0 text-gray-800"><i class="fas fa-exclamation-triangle me-2"></i>Emergency Priority Management</h1>
+                <div>
+                    <a href="{{ url_for('management') }}" class="btn btn-secondary me-2"><i class="fas fa-water me-2"></i>Bowser Management</a>
+                    <button type="button" class="btn btn-danger" id="triggerEmergency"><i class="fas fa-radiation me-2"></i>Trigger Emergency</button>
+                </div>
+            </div>
+            
+            <div class="row mb-4">
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-danger shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Emergency Deployments</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800" id="emergency-count">0</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-ambulance fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-warning shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">High Priority</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800" id="high-count">0</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-exclamation-circle fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-primary shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Normal Priority</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800" id="normal-count">0</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-tint fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-success shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Low Priority</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800" id="low-count">0</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">Active Deployments by Priority</h6>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-sm btn-outline-danger" id="filter-emergency">Emergency</button>
+                        <button type="button" class="btn btn-sm btn-outline-warning" id="filter-high">High</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="filter-normal">Normal</button>
+                        <button type="button" class="btn btn-sm btn-outline-success" id="filter-low">Low</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="filter-all">All</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered" id="deploymentsTable" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>Bowser</th>
+                                    <th>Location</th>
+                                    <th>Priority</th>
+                                    <th>Score</th>
+                                    <th>Population</th>
+                                    <th>Start Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for deployment in deployments %}
+                                <tr class="deployment-row" data-priority="{{ deployment.priority }}">
+                                    <td>{{ deployment.bowser.number }}</td>
+                                    <td>{{ deployment.location.name }}</td>
+                                    <td>
+                                        {% if deployment.priority == 'emergency' %}
+                                        <span class="badge bg-danger">Emergency</span>
+                                        {% elif deployment.priority == 'high' %}
+                                        <span class="badge bg-warning text-dark">High</span>
+                                        {% elif deployment.priority == 'normal' %}
+                                        <span class="badge bg-primary">Normal</span>
+                                        {% elif deployment.priority == 'low' %}
+                                        <span class="badge bg-success">Low</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="progress">
+                                            <div class="progress-bar 
+                                                {% if deployment.priority_score >= 90 %}bg-danger
+                                                {% elif deployment.priority_score >= 60 %}bg-warning
+                                                {% elif deployment.priority_score >= 30 %}bg-primary
+                                                {% else %}bg-success{% endif %}" 
+                                                role="progressbar" style="width: {{ deployment.priority_score }}%" 
+                                                aria-valuenow="{{ deployment.priority_score }}" aria-valuemin="0" aria-valuemax="100">
+                                                {{ deployment.priority_score }}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>{{ deployment.population_affected or 'N/A' }}</td>
+                                    <td>{{ deployment.start_date.strftime('%Y-%m-%d') }}</td>
+                                    <td>
+                                        <a href="{{ url_for('update_priority', deployment_id=deployment.id) }}" class="btn btn-sm btn-primary">
+                                            <i class="fas fa-edit me-1"></i>Update
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-xl-8 col-lg-7">
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">Priority Map</h6>
+                        </div>
+                        <div class="card-body">
+                            <div id="priorityMap" style="height: 400px;"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-xl-4 col-lg-5">
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">Priority Distribution</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-pie pt-4 pb-2">
+                                <canvas id="priorityChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Emergency Modal -->
+<div class="modal fade" id="emergencyModal" tabindex="-1" aria-labelledby="emergencyModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="emergencyModalLabel"><i class="fas fa-exclamation-triangle me-2"></i>Emergency Response System</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger">
+                    <strong>Warning:</strong> Triggering an emergency will reallocate water bowsers based on the priority system. This should only be used in genuine emergencies.
+                </div>
+                <form id="emergencyForm">
+                    <div class="mb-3">
+                        <label for="emergency_location" class="form-label">Emergency Location</label>
+                        <select class="form-select" id="emergency_location" required>
+                            <option value="">-- Select Location --</option>
+                            {% for deployment in deployments %}
+                            <option value="{{ deployment.location.id }}">{{ deployment.location.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="emergency_description" class="form-label">Emergency Description</label>
+                        <textarea class="form-control" id="emergency_description" rows="3" required></textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="population_affected" class="form-label">Estimated Population Affected</label>
+                                <input type="number" class="form-control" id="population_affected" min="0" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="expected_duration" class="form-label">Expected Duration (days)</label>
+                                <input type="number" class="form-control" id="expected_duration" min="1" value="3" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="alternative_sources">
+                        <label class="form-check-label" for="alternative_sources">Alternative water sources available</label>
+                    </div>
+                    <div class="mb-3">
+                        <label for="vulnerability_index" class="form-label">Vulnerability Index (0-10)</label>
+                        <input type="range" class="form-range" id="vulnerability_index" min="0" max="10" value="5">
+                        <div class="d-flex justify-content-between">
+                            <small>Low</small>
+                            <small>Medium</small>
+                            <small>High</small>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmEmergency">Trigger Emergency</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Count deployments by priority
+    let deployments = Array.from(document.querySelectorAll('.deployment-row'));
+    let emergencyCount = 0;
+    let highCount = 0;
+    let normalCount = 0;
+    let lowCount = 0;
+    
+    deployments.forEach(deployment => {
+        let priority = deployment.dataset.priority;
+        
+        if (priority === 'emergency') {
+            emergencyCount++;
+        } else if (priority === 'high') {
+            highCount++;
+        } else if (priority === 'normal') {
+            normalCount++;
+        } else if (priority === 'low') {
+            lowCount++;
+        }
+    });
+    
+    document.getElementById('emergency-count').textContent = emergencyCount;
+    document.getElementById('high-count').textContent = highCount;
+    document.getElementById('normal-count').textContent = normalCount;
+    document.getElementById('low-count').textContent = lowCount;
+    
+    // Setup chart
+    var ctx = document.getElementById('priorityChart').getContext('2d');
+    var myPieChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Emergency', 'High', 'Normal', 'Low'],
+            datasets: [{
+                data: [emergencyCount, highCount, normalCount, lowCount],
+                backgroundColor: ['#e74a3b', '#f6c23e', '#4e73df', '#1cc88a'],
+                hoverBackgroundColor: ['#d52a1a', '#e3a820', '#2e59d9', '#17a673'],
+                hoverBorderColor: 'rgba(234, 236, 244, 1)',
+            }],
+        },
+        options: {
+            maintainAspectRatio: false,
+            tooltips: {
+                backgroundColor: "rgb(255,255,255)",
+                bodyFontColor: "#858796",
+                borderColor: '#dddfeb',
+                borderWidth: 1,
+                xPadding: 15,
+                yPadding: 15,
+                displayColors: false,
+                caretPadding: 10,
+            },
+            legend: {
+                display: true,
+                position: 'bottom'
+            },
+            cutoutPercentage: 70,
+        },
+    });
+    
+    // Filters
+    document.getElementById('filter-emergency').addEventListener('click', function() {
+        filterDeployments('emergency');
+    });
+    
+    document.getElementById('filter-high').addEventListener('click', function() {
+        filterDeployments('high');
+    });
+    
+    document.getElementById('filter-normal').addEventListener('click', function() {
+        filterDeployments('normal');
+    });
+    
+    document.getElementById('filter-low').addEventListener('click', function() {
+        filterDeployments('low');
+    });
+    
+    document.getElementById('filter-all').addEventListener('click', function() {
+        filterDeployments('all');
+    });
+    
+    function filterDeployments(priority) {
+        deployments.forEach(deployment => {
+            if (priority === 'all' || deployment.dataset.priority === priority) {
+                deployment.style.display = '';
+            } else {
+                deployment.style.display = 'none';
+            }
+        });
+    }
+    
+    // Emergency modal
+    document.getElementById('triggerEmergency').addEventListener('click', function() {
+        let modal = new bootstrap.Modal(document.getElementById('emergencyModal'));
+        modal.show();
+    });
+    
+    // Confirm emergency
+    document.getElementById('confirmEmergency').addEventListener('click', function() {
+        // In a real application, this would submit to the server
+        alert('Emergency would be triggered in a real implementation');
+        bootstrap.Modal.getInstance(document.getElementById('emergencyModal')).hide();
+    });
+    
+    // Initialize the priority map (would use actual map library in real implementation)
+    document.getElementById('priorityMap').innerHTML = "<div class='alert alert-info text-center'>Geographic map showing deployment locations color-coded by priority would appear here in the live application.</div>";
+});
+</script>
+{% endblock %}

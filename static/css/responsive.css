@@ -1,0 +1,127 @@
+/* Responsive Design System for AquaAlert */
+
+/* Base Mobile-First Styles */
+:root {
+    --container-padding: 1rem;
+    --form-width: 100%;
+    --card-width: 100%;
+}
+
+/* Forms and Input Containers */
+.input-group, 
+.form-group {
+    width: 100%;
+    margin-bottom: 1rem;
+}
+
+input, 
+select, 
+textarea {
+    width: 100%;
+    padding: 0.75rem;
+    font-size: 1rem;
+}
+
+/* Cards and Containers */
+.card,
+.container,
+.login-container,
+.management-container,
+.maintenance-container,
+.reports-container,
+.finance-container {
+    width: 100%;
+    padding: var(--container-padding);
+    margin: 0 auto;
+    max-width: 100%;
+}
+
+/* Tables */
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+table {
+    min-width: 100%;
+}
+
+/* Buttons */
+.btn,
+button[type="submit"],
+.action-btn {
+    width: 100%;
+    padding: 0.75rem;
+    margin: 0.5rem 0;
+}
+
+/* Tablet (768px and up) */
+@media screen and (min-width: 768px) {
+    :root {
+        --container-padding: 2rem;
+        --form-width: 80%;
+        --card-width: 48%;
+    }
+
+    .btn,
+    button[type="submit"],
+    .action-btn {
+        width: auto;
+        min-width: 120px;
+    }
+
+    .card-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1rem;
+    }
+
+    .form-container {
+        max-width: 600px;
+        margin: 0 auto;
+    }
+}
+
+/* Desktop (1024px and up) */
+@media screen and (min-width: 1024px) {
+    :root {
+        --container-padding: 3rem;
+        --form-width: 60%;
+        --card-width: 32%;
+    }
+
+    .container,
+    .management-container,
+    .maintenance-container,
+    .reports-container,
+    .finance-container {
+        max-width: 1200px;
+    }
+
+    .login-container {
+        max-width: 400px;
+    }
+
+    .dashboard-grid {
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    }
+}
+
+/* Large Desktop (1440px and up) */
+@media screen and (min-width: 1440px) {
+    .container,
+    .management-container,
+    .maintenance-container,
+    .reports-container,
+    .finance-container {
+        max-width: 1400px;
+    }
+}
+
+/* Print styles */
+@media print {
+    .no-print {
+        display: none !important;
+    }
+}

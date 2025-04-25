@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Create Maintenance Record - AquaAlert{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Create New Maintenance Record</h2>
+    <form method="POST" action="{{ url_for('create_maintenance') }}">
+        <div class="mb-3">
+            <label for="bowser_id" class="form-label">Bowser</label>
+            <select class="form-select" id="bowser_id" name="bowser_id" required>
+                <option value="">Select a bowser</option>
+                {% for bowser in bowsers %}
+                <option value="{{ bowser.id }}">{{ bowser.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="mb-3">
+            <label for="maintenance_type" class="form-label">Maintenance Type</label>
+            <select class="form-select" id="maintenance_type" name="maintenance_type" required>
+                <option value="routine">Routine</option>
+                <option value="repair">Repair</option>
+                <option value="inspection">Inspection</option>
+                <option value="emergency">Emergency</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <label for="description" class="form-label">Description</label>
+            <textarea class="form-control" id="description" name="description" rows="3" required></textarea>
+        </div>
+        <div class="mb-3">
+            <label for="date" class="form-label">Date</label>
+            <input type="date" class="form-control" id="date" name="date" required>
+        </div>
+        <div class="mb-3">
+            <label for="status" class="form-label">Status</label>
+            <select class="form-select" id="status" name="status">
+                <option value="scheduled">Scheduled</option>
+                <option value="in_progress">In Progress</option>
+                <option value="completed">Completed</option>
+                <option value="cancelled">Cancelled</option>
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Create Maintenance Record</button>
+        <a href="{{ url_for('maintenance') }}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %} 

@@ -1,0 +1,32 @@
+{
+    "bowsers": [
+        {
+            "id": "1",
+            "number": "B001",
+            "capacity": 1000,
+            "status": "available",
+            "last_maintenance": "2025-04-24T19:38:42.697251"
+        }
+    ],
+    "locations": [
+        {
+            "id": "1",
+            "name": "Test Location",
+            "coordinates": {
+                "lat": 51.5074,
+                "lng": -0.1278
+            },
+            "status": "active"
+        }
+    ],
+    "deployments": [
+        {
+            "id": "1",
+            "bowser_id": "1",
+            "location_id": "1",
+            "start_date": "2025-04-24T19:38:42.697251",
+            "end_date": null,
+            "status": "active"
+        }
+    ]
+}

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }} - AquaAlert</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .markdown-content {
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        .markdown-content h1 {
+            color: #0056b3;
+            margin-bottom: 20px;
+        }
+        .markdown-content h2 {
+            color: #0056b3;
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+        .markdown-content h3 {
+            margin-top: 25px;
+        }
+        .markdown-content code {
+            background-color: #e9ecef;
+            padding: 2px 5px;
+            border-radius: 3px;
+        }
+        .markdown-content pre {
+            background-color: #212529;
+            color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        .markdown-content ul, .markdown-content ol {
+            padding-left: 25px;
+        }
+        .markdown-content blockquote {
+            border-left: 4px solid #0056b3;
+            padding-left: 15px;
+            margin-left: 0;
+            color: #6c757d;
+        }
+    </style>
+    <!-- Include a markdown parser -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="#">AquaAlert</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ml-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/management">Management</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/testing">Testing Dashboard</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <h1>{{ title }}</h1>
+        <div class="markdown-content" id="markdown-content"></div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/jquery-3.5.1.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+    <script>
+        $(document).ready(function() {
+            // Parse and render the markdown content
+            const markdownContent = `{{ content|safe }}`;
+            document.getElementById('markdown-content').innerHTML = marked.parse(markdownContent);
+        });
+    </script>
+</body>
+</html>

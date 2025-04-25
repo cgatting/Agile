@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - AquaAlert</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/login.css">
+    <link rel="stylesheet" href="/static/css/responsive.css">
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <i class="fas fa-water fa-2x"></i>
+            <h1>AquaAlert</h1>
+        </div>
+        <form class="login-form" action="php/login.php" method="POST">
+            <div class="input-group">
+                <label for="email">Email:</label>
+                <input type="email" id="email" name="email" required placeholder="Enter your email">
+            </div>
+            <div class="input-group">
+                <label for="password">Password:</label>
+                <input type="password" id="password" name="password" required placeholder="Enter your password">
+            </div>
+            <button type="submit" class="btn login-btn">Login</button>
+            <div class="form-links">
+                <a href="Forgotpassword.html" class="link">Forgot Password?</a>
+                <a href="registration.html" class="link">Create an account</a>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Create Mutual Aid Scheme{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0 text-gray-800"><i class="fas fa-hands-helping me-2"></i>Create New Mutual Aid Scheme</h1>
+                <a href="{{ url_for('manage_schemes') }}" class="btn btn-secondary"><i class="fas fa-arrow-left me-2"></i>Back to Schemes</a>
+            </div>
+            
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Scheme Details</h6>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('create_scheme') }}">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="name" class="form-label">Scheme Name</label>
+                                <input type="text" class="form-control" id="name" name="name" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="status" class="form-label">Status</label>
+                                <select class="form-select" id="status" name="status" required>
+                                    <option value="active">Active</option>
+                                    <option value="pending">Pending</option>
+                                    <option value="inactive">Inactive</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="start_date" class="form-label">Start Date</label>
+                                <input type="date" class="form-control" id="start_date" name="start_date" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="end_date" class="form-label">End Date (optional)</label>
+                                <input type="date" class="form-control" id="end_date" name="end_date">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="contribution_amount" class="form-label">Contribution Amount (£)</label>
+                                <input type="number" class="form-control" id="contribution_amount" name="contribution_amount" step="0.01" min="0" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="initial_balance" class="form-label">Initial Balance (£)</label>
+                                <input type="number" class="form-control" id="initial_balance" name="initial_balance" step="0.01" min="0" value="0.00">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <label for="notes" class="form-label">Notes</label>
+                                <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary"><i class="fas fa-save me-2"></i>Create Scheme</button>
+                                <a href="{{ url_for('manage_schemes') }}" class="btn btn-secondary ms-2">Cancel</a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">About Mutual Aid Schemes</h6>
+                </div>
+                <div class="card-body">
+                    <p>Mutual Aid Schemes provide a way for communities to pool resources for emergency water deployment. Benefits include:</p>
+                    <ul>
+                        <li>Cost sharing between participating entities</li>
+                        <li>Priority access to emergency water bowsers</li>
+                        <li>Reduced response times during emergencies</li>
+                        <li>Financial assistance for underfunded areas</li>
+                    </ul>
+                    <p>The contribution amount is the standard fee that participating entities will pay. When creating a new scheme, you can set an initial balance if funding has already been secured.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,57 @@
+User Roles and Access Levels
+
+1. Admin User
+   - Role: admin
+   - Username: admin_test
+   - Password: Admin@123
+   - Email: admin@test.com
+   - Access: Full system access
+   - Capabilities:
+     * User management
+     * Financial management
+     * System configuration
+     * Emergency priority management
+     * All staff capabilities
+
+2. Staff User
+   - Role: staff
+   - Username: staff_test
+   - Password: Staff@123
+   - Email: staff@test.com
+   - Access: Operational management
+   - Capabilities:
+     * Bowser management
+     * Location management
+     * Deployment management
+     * Maintenance management
+     * View financial data
+
+3. Regular User
+   - Role: staff
+   - Username: testuser
+   - Password: User@123
+   - Email: test@test.com
+   - Access: Basic system access
+   - Capabilities:
+     * View public map
+     * View bowser status
+     * View location information
+     * Basic dashboard access
+
+Security Notes: 
+- All users can access the public map
+- Passwords are stored securely in the database using hashing
+- Never store passwords in plain text
+- Use strong password policies
+- Implement password rotation policies
+- Enable two-factor authentication where possible
+- Change these default passwords immediately after first login
+- These are test credentials - use different passwords in production
+
+Note: 
+- All users can access the public map
+- Passwords should be stored securely in the database using hashing
+- Never store passwords in plain text
+- Use strong password policies
+- Implement password rotation policies
+- Enable two-factor authentication where possible 

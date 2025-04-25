@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Create Deployment - AquaAlert{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Create New Deployment</h2>
+    <form method="POST" action="{{ url_for('create_deployment') }}">
+        <div class="mb-3">
+            <label for="bowser_id" class="form-label">Bowser</label>
+            <select class="form-select" id="bowser_id" name="bowser_id" required>
+                <option value="">Select a bowser</option>
+                {% for bowser in bowsers %}
+                <option value="{{ bowser.id }}">{{ bowser.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="mb-3">
+            <label for="location_id" class="form-label">Location</label>
+            <select class="form-select" id="location_id" name="location_id" required>
+                <option value="">Select a location</option>
+                {% for location in locations %}
+                <option value="{{ location.id }}">{{ location.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="mb-3">
+            <label for="start_date" class="form-label">Start Date</label>
+            <input type="date" class="form-control" id="start_date" name="start_date" required>
+        </div>
+        <div class="mb-3">
+            <label for="end_date" class="form-label">End Date</label>
+            <input type="date" class="form-control" id="end_date" name="end_date" required>
+        </div>
+        <div class="mb-3">
+            <label for="status" class="form-label">Status</label>
+            <select class="form-select" id="status" name="status">
+                <option value="scheduled">Scheduled</option>
+                <option value="in_progress">In Progress</option>
+                <option value="completed">Completed</option>
+                <option value="cancelled">Cancelled</option>
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Create Deployment</button>
+        <a href="{{ url_for('deployments') }}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %} 

@@ -1,0 +1,264 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics & Reports{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/reports.css') }}">
+{% endblock %}
+
+{% block content %}
+
+    <main class="container-fluid px-4">
+        <div class="d-flex justify-content-between align-items-center mb-4 mt-3">
+            <h1 class="h3 mb-0"><i class="fas fa-chart-line me-2"></i>Analytics & Reports</h1>
+            <div class="d-flex align-items-center gap-3">
+                <div class="input-group">
+                    <label class="input-group-text" for="dateRange">Time Period:</label>
+                    <select class="form-select" id="dateRange">
+                        <option value="7">Last 7 Days</option>
+                        <option value="30">Last 30 Days</option>
+                        <option value="90">Last 90 Days</option>
+                        <option value="365">Last Year</option>
+                        <option value="custom">Custom Range</option>
+                    </select>
+                </div>
+                <div id="customRange" class="d-flex gap-2 align-items-center" style="display: none !important;">
+                    <input type="date" class="form-control" id="startDate">
+                    <input type="date" class="form-control" id="endDate">
+                    <button class="btn btn-primary" id="applyRange">Apply</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4 mb-4">
+            <!-- Key Metrics -->
+            <div class="col-12">
+                <div class="row g-4">
+                    <div class="col-md-3 col-sm-6">
+                        <div class="card h-100 bg-primary text-white">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h5 class="card-title mb-0">Deployed Bowsers</h5>
+                                    <div class="rounded-circle bg-white bg-opacity-25 p-2">
+                                        <i class="fas fa-truck"></i>
+                                    </div>
+                                </div>
+                                <h3 class="display-6 mb-2" id="activeBowsers">0</h3>
+                                <div class="small d-flex align-items-center" id="bowserChange"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                        <div class="card h-100 bg-success text-white">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h5 class="card-title mb-0">Active Locations</h5>
+                                    <div class="rounded-circle bg-white bg-opacity-25 p-2">
+                                        <i class="fas fa-map-marker-alt"></i>
+                                    </div>
+                                </div>
+                                <h3 class="display-6 mb-2" id="locationsServed">0</h3>
+                                <div class="small d-flex align-items-center" id="locationChange"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                        <div class="card h-100 bg-warning text-white">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h5 class="card-title mb-0">Maintenance Completion</h5>
+                                    <div class="rounded-circle bg-white bg-opacity-25 p-2">
+                                        <i class="fas fa-wrench"></i>
+                                    </div>
+                                </div>
+                                <h3 class="display-6 mb-2" id="maintenanceRate">0%</h3>
+                                <div class="small d-flex align-items-center" id="maintenanceChange"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                        <div class="card h-100 bg-info text-white">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h5 class="card-title mb-0">Total Water Supplied</h5>
+                                    <div class="rounded-circle bg-white bg-opacity-25 p-2">
+                                        <i class="fas fa-tint"></i>
+                                    </div>
+                                </div>
+                                <h3 class="display-6 mb-2" id="waterSupplied">0L</h3>
+                                <div class="small d-flex align-items-center" id="supplyChange"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts -->
+            <div class="col-12 mb-4">
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-header bg-light">
+                                <h5 class="card-title mb-0">Bowser Status Distribution</h5>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="utilizationChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-header bg-light">
+                                <h5 class="card-title mb-0">Deployments by Location Type</h5>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="distributionChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Maintenance Analytics -->
+            <div class="col-12 mb-4">
+                <h4 class="mb-3">Maintenance Analytics</h4>
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-header bg-light">
+                                <h5 class="card-title mb-0">Maintenance by Type</h5>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="maintenanceTypeChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-header bg-light">
+                                <h5 class="card-title mb-0">Response Time</h5>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="responseTimeChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Location Performance -->
+            <div class="col-12 mb-4">
+                <div class="card">
+                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">Location Performance</h5>
+                        <div class="d-flex align-items-center">
+                            <select class="form-select form-select-sm" id="locationTypeFilter">
+                                <option value="all">All Types</option>
+                                <option value="healthcare">Healthcare</option>
+                                <option value="emergency">Emergency</option>
+                                <option value="residential">Residential</option>
+                                <option value="commercial">Commercial</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover table-striped mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Location</th>
+                                        <th>Type</th>
+                                        <th>Bowsers Deployed</th>
+                                        <th>Supply Level</th>
+                                        <th>Refill Rate</th>
+                                        <th>Issues</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="performanceTableBody">
+                                    <!-- Will be populated by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Active Alerts -->
+            <div class="col-12 mb-4">
+                <div class="card">
+                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">Active Alerts</h5>
+                        <div class="d-flex align-items-center">
+                            <select class="form-select form-select-sm" id="alertPriorityFilter">
+                                <option value="all">All Priorities</option>
+                                <option value="1">High Priority</option>
+                                <option value="2">Medium Priority</option>
+                                <option value="3">Low Priority</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover table-striped mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Type</th>
+                                        <th>Location</th>
+                                        <th>Message</th>
+                                        <th>Priority</th>
+                                        <th>Created</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="alertsTableBody">
+                                    <!-- Will be populated by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Export Options -->
+            <div class="col-12 mb-4">
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <h5 class="card-title mb-0">Export Reports</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex gap-2 flex-wrap">
+                            <button class="btn btn-outline-danger" data-format="pdf">
+                                <i class="fas fa-file-pdf me-2"></i>Export as PDF
+                            </button>
+                            <button class="btn btn-outline-success" data-format="excel">
+                                <i class="fas fa-file-excel me-2"></i>Export as Excel
+                            </button>
+                            <button class="btn btn-outline-primary" data-format="csv">
+                                <i class="fas fa-file-csv me-2"></i>Export as CSV
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 5">
+        <div id="notification" class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body" id="notificationText"></div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{{ url_for('static', filename='js/config.js') }}"></script>
+<script src="{{ url_for('static', filename='js/mock-data.js') }}"></script>
+<script src="{{ url_for('static', filename='js/utils.js') }}"></script>
+<script src="{{ url_for('static', filename='js/data.js') }}"></script>
+<script src="{{ url_for('static', filename='js/reports.js') }}"></script>
+{% endblock %}

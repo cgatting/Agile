@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block title %}Emergency Water Locations{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/locations.css') }}">
+{% endblock %}
+
+{% block content %}
+
+    <main class="container-fluid px-4">
+        <div class="d-flex justify-content-between align-items-center mb-4 mt-3">
+            <h1 class="h3 mb-0"><i class="fas fa-map-marker-alt me-2"></i>Emergency Water Locations</h1>
+            <div class="d-flex gap-2">
+                <button class="btn btn-primary" id="addLocationBtn">
+                    <i class="fas fa-plus me-2"></i>Add Location
+                </button>
+            </div>
+        </div>
+
+        <div class="row g-4 mb-4">
+            <div class="col-lg-8">
+                <div class="card h-100">
+                    <div class="card-header bg-light">
+                        <h5 class="card-title mb-0">Location Map</h5>
+                    </div>
+                    <div id="locationsMap" class="card-body" style="min-height: 500px;"></div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="card-title mb-0">Search & Filters</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text"><i class="fas fa-search"></i></span>
+                            <input type="text" id="locationSearch" class="form-control" placeholder="Search locations...">
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label for="areaFilter" class="form-label">Area</label>
+                                <select id="areaFilter" class="form-select">
+                                    <option value="">All Areas</option>
+                                    <option value="north">North</option>
+                                    <option value="south">South</option>
+                                    <option value="east">East</option>
+                                    <option value="west">West</option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label for="statusFilter" class="form-label">Status</label>
+                                <select id="statusFilter" class="form-select">
+                                    <option value="">All Statuses</option>
+                                    <option value="active">Active</option>
+                                    <option value="planned">Planned</option>
+                                    <option value="inactive">Inactive</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <h5 class="card-title mb-0">Location List</h5>
+                    </div>
+                    <div class="card-body" id="locationList">
+                        <!-- Location cards will be dynamically inserted here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Location Modal -->
+        <div class="modal fade" id="addLocationModal" tabindex="-1" aria-labelledby="addLocationModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="addLocationModalLabel"><i class="fas fa-map-marker-alt me-2"></i>Add New Location</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="addLocationForm">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="locationName" class="form-label">Location Name</label>
+                                    <input type="text" class="form-control" id="locationName" required placeholder="Enter location name">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="locationArea" class="form-label">Area</label>
+                                    <select id="locationArea" class="form-select" required>
+                                        <option value="">Select Area</option>
+                                        <option value="north">North</option>
+                                        <option value="south">South</option>
+                                        <option value="east">East</option>
+                                        <option value="west">West</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="locationAddress" class="form-label">Address</label>
+                                    <input type="text" class="form-control" id="locationAddress" required placeholder="Enter full address">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="locationPostcode" class="form-label">Postcode</label>
+                                    <input type="text" class="form-control" id="locationPostcode" required placeholder="Enter postcode">
+                                </div>
+                                <div class="col-md-12">
+                                    <label for="locationType" class="form-label">Location Type</label>
+                                    <select id="locationType" class="form-select" required>
+                                        <option value="">Select Type</option>
+                                        <option value="healthcare">Healthcare</option>
+                                        <option value="emergency">Emergency</option>
+                                        <option value="residential">Residential</option>
+                                        <option value="commercial">Commercial</option>
+                                    </select>
+                                </div>
+                                <div class="col-12">
+                                    <label for="locationNotes" class="form-label">Notes</label>
+                                    <textarea id="locationNotes" class="form-control" rows="3" placeholder="Additional information"></textarea>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="submitLocationBtn">Add Location</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+<script src="{{ url_for('static', filename='js/config.js') }}"></script>
+<script src="{{ url_for('static', filename='js/mock-data.js') }}"></script>
+<script src="{{ url_for('static', filename='js/utils.js') }}"></script>
+<script src="{{ url_for('static', filename='js/data.js') }}"></script>
+<script src="{{ url_for('static', filename='js/locations.js') }}"></script>
+{% endblock %}

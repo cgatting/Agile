@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Mutual Aid Scheme{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0 text-gray-800"><i class="fas fa-hands-helping me-2"></i>Edit Mutual Aid Scheme</h1>
+                <a href="{{ url_for('manage_schemes') }}" class="btn btn-secondary"><i class="fas fa-arrow-left me-2"></i>Back to Schemes</a>
+            </div>
+            
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Scheme Details</h6>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('edit_scheme', scheme_id=scheme.id) }}">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="name" class="form-label">Scheme Name</label>
+                                <input type="text" class="form-control" id="name" name="name" value="{{ scheme.name }}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="status" class="form-label">Status</label>
+                                <select class="form-select" id="status" name="status" required>
+                                    <option value="active" {% if scheme.status == 'active' %}selected{% endif %}>Active</option>
+                                    <option value="pending" {% if scheme.status == 'pending' %}selected{% endif %}>Pending</option>
+                                    <option value="inactive" {% if scheme.status == 'inactive' %}selected{% endif %}>Inactive</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="start_date" class="form-label">Start Date</label>
+                                <input type="date" class="form-control" id="start_date" name="start_date" value="{{ scheme.start_date.strftime('%Y-%m-%d') }}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="end_date" class="form-label">End Date (optional)</label>
+                                <input type="date" class="form-control" id="end_date" name="end_date" value="{% if scheme.end_date %}{{ scheme.end_date.strftime('%Y-%m-%d') }}{% endif %}">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="contribution_amount" class="form-label">Contribution Amount (£)</label>
+                                <input type="number" class="form-control" id="contribution_amount" name="contribution_amount" value="{{ scheme.contribution_amount }}" step="0.01" min="0" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="current_balance" class="form-label">Current Balance (£)</label>
+                                <input type="number" class="form-control" id="current_balance" value="{{ scheme.balance }}" readonly>
+                                <small class="form-text text-muted">To modify balance, use "Add Funds" on the Schemes page.</small>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <label for="notes" class="form-label">Notes</label>
+                                <textarea class="form-control" id="notes" name="notes" rows="3">{{ scheme.notes }}</textarea>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary"><i class="fas fa-save me-2"></i>Update Scheme</button>
+                                <a href="{{ url_for('manage_schemes') }}" class="btn btn-secondary ms-2">Cancel</a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Scheme History</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Transaction Type</th>
+                                    <th>Amount</th>
+                                    <th>Notes</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- This would be populated with actual transaction history in a real implementation -->
+                                <tr>
+                                    <td>{{ scheme.created_at.strftime('%Y-%m-%d') }}</td>
+                                    <td>Scheme Created</td>
+                                    <td>£{{ "%.2f"|format(scheme.balance) }}</td>
+                                    <td>Initial balance</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

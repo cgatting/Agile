@@ -1,0 +1,166 @@
+CT5038 Assignment 2 Briefing
+
+Assignment Title: CT5038 Assignment 2 2024/2025Due Date: Friday, 30th May 2025, 3:00 PMTutor Contact: Ab Alam
+
+Assessment Overview
+
+This assignment requires teams to develop a database application using agile development principles, with Scrum as the adopted methodology.
+
+Key Learning Outcomes:
+
+Propose and defend innovative solutions to software development and associated business problems using agile strategies.
+
+Discover challenges in adopting agile strategies within database application development.
+
+Apply proven agile database techniques for fast, high-quality development.
+
+Demonstrate academic progression and career development skills.
+
+Team Composition & Marking Structure
+
+Group project (3-5 members per team).
+
+80% of the mark is allocated for team submission.
+
+20% of the mark is allocated for a personal statement.
+
+Individual contribution is assessed; insufficient contribution will reduce the final grade.
+
+Project Requirements
+
+Develop a database-driven business system that effectively implements agile software development methodologies. Key deliverables include:
+
+Functional prototype with a business-use focus.
+
+Comprehensive project documentation.
+
+Evidence of Scrum adoption and agile project management.
+
+Reflective review and personal statements.
+
+Failure to document system functionality will result in it not being considered during grading.
+
+Scenario: Emergency Water Bowser Management System
+
+Teams will develop an information system for UK water companies to assist in deploying and managing emergency water bowsers. The system should enable:
+
+Planning emergency bowser locations.
+
+Scheduling and monitoring deployment.
+
+Tracking maintenance requests and mechanical issues.
+
+Planning and monitoring refilling schedules.
+
+Notifying the public about bowser locations and statuses.
+
+A fully functional prototype will be demonstrated at a trade show (assignment deadline).
+
+Key System Features:
+
+Assist in planning and recording bowser locations.
+
+Manage deployment, tracking, and maintenance.
+
+Schedule refilling and monitor supply levels.
+
+Notify consumers and stakeholders of bowser statuses.
+
+Allow users to report problems and track resolutions.
+
+Considerations for Development:
+
+Bowser ownership and borrowing (UK Government Mutual Aid Scheme).
+
+Emergency water supply priorities (domestic, healthcare, emergency services, critical industries).
+
+Tracking and coordinating refilling, repairs, and deployment logistics.
+
+Managing invoices and financial reconciliation.
+
+Deliverables
+
+Your submission should include:
+
+Database Prototype Application
+
+Functional prototype that meets business needs.
+
+Explanation of key functionalities, system architecture, and data flow.
+
+Documentation (Portfolio Submission)
+
+User Manual: Task-oriented, business-user-friendly guide.
+
+Team Vision & Product Vision Statements (initially submitted on 31st January 2025).
+
+Scrum Adoption Evidence:
+
+Initial product backlog and prioritisation rationale.
+
+Sprint backlog, workload estimates, and burndown rates.
+
+Sprint review and retrospective notes.
+
+Testing strategy documentation.
+
+Database & System Design Explanation:
+
+Logical and physical data models.
+
+User stories and corresponding system components.
+
+Navigation, layout, and design choices.
+
+Explanation of code, SQL queries, calculations, and validation mechanisms.
+
+Reference List: Proper attribution of external code and ideas.
+
+Individual Personal Statement (500 words per team member)
+
+Contribution to the project.
+
+Tasks undertaken.
+
+Learning outcomes.
+
+Equitable participation in team efforts.
+
+Login Credentials
+
+Ensure assessors can verify system functionality.
+
+Team Organisation & Project Management
+
+Maintain clear version-controlled documentation throughout the project.
+
+Assign responsibilities equitably to all members.
+
+Hold regular team meetings (recommended: 3+ hours per week).
+
+Maintain a shared repository for backlog, documentation, and updates.
+
+Conduct structured Sprint Reviews (two required during the project).
+
+Grading Criteria
+
+<40%: Poorly structured or missing key components (e.g., no Scrum adoption, incomplete deliverables).
+
+40-50%: Limited functionality and Scrum implementation.
+
+50-60%: Demonstrates understanding of agile principles, equitable contribution, and good documentation.
+
+60-70%: Well-implemented system with strong agile development methodology.
+
+70%+: High-quality, business-ready prototype with comprehensive documentation and Scrum adoption.
+
+Submission Details
+
+One team portfolio submission with all required documentation.
+
+Individual statements attached to the portfolio.
+
+Due by Friday, 30th May 2025, 3:00 PM.
+
+For any inquiries, contact Ab Alam at aalam@glos.ac.uk.
+

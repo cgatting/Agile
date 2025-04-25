@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}Create Invoice{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0 text-gray-800"><i class="fas fa-file-invoice me-2"></i>Create New Invoice</h1>
+                <a href="{{ url_for('manage_invoices') }}" class="btn btn-secondary"><i class="fas fa-arrow-left me-2"></i>Back to Invoices</a>
+            </div>
+            
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Invoice Details</h6>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('create_invoice') }}">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="client_name" class="form-label">Client Name</label>
+                                <input type="text" class="form-control" id="client_name" name="client_name" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="deployment_id" class="form-label">Related Deployment</label>
+                                <select class="form-select" id="deployment_id" name="deployment_id">
+                                    <option value="">-- None --</option>
+                                    {% for deployment in deployments %}
+                                    <option value="{{ deployment.id }}">
+                                        Bowser {{ deployment.bowser.number }} at {{ deployment.location.name }} 
+                                        ({{ deployment.start_date.strftime('%Y-%m-%d') }} - 
+                                        {% if deployment.end_date %}{{ deployment.end_date.strftime('%Y-%m-%d') }}{% else %}Ongoing{% endif %})
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="issue_date" class="form-label">Issue Date</label>
+                                <input type="date" class="form-control" id="issue_date" name="issue_date" value="{{ today }}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="due_date" class="form-label">Due Date</label>
+                                <input type="date" class="form-control" id="due_date" name="due_date" value="{{ due_date }}" required>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="amount" class="form-label">Amount (£)</label>
+                                <input type="number" class="form-control" id="amount" name="amount" step="0.01" min="0" required>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <label for="notes" class="form-label">Notes</label>
+                                <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary"><i class="fas fa-save me-2"></i>Create Invoice</button>
+                                <a href="{{ url_for('manage_invoices') }}" class="btn btn-secondary ms-2">Cancel</a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
