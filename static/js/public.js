@@ -1,3 +1,5 @@
+import { dataManager } from './data.js';
+
 /**
  * Public interface functionality for AquaAlert
  */
@@ -12,20 +14,15 @@ class PublicInterface {
         this.initializeMap();
         this.initializeEventListeners();
         
-        // Force data manager to load mock data
-        if (!dataManager.bowsers.length) {
-            dataManager.loadMockData();
-        }
-        
-        // Wait for a moment to ensure map is properly initialized
-        setTimeout(() => {
-            // Test a direct marker first to verify basic functionality
-            this.addTestMarker();
-            
-            // Then load the actual data
-            console.log('Delayed data loading to ensure map is ready');
-            this.loadPublicData();
-        }, 1000);
+        // Initialize data from server API and then load public data
+        dataManager.initializeData()
+            .then(() => {
+                this.loadPublicData();
+            })
+            .catch(error => {
+                console.error('Data initialization failed:', error);
+                this.showNotification('Error loading data', 'error');
+            });
     }
 
     initializeMap() {
@@ -112,9 +109,14 @@ class PublicInterface {
         document.addEventListener('click', (e) => {
             if (e.target && e.target.classList.contains('report-issue-btn')) {
                 const bowserNumber = e.target.getAttribute('data-bowser-number');
-                console.log('Report issue button clicked for bowser:', bowserNumber);
+                const locationId = e.target.getAttribute('data-location-id');
+
                 if (bowserNumber) {
-                    this.navigateToReport(bowserNumber);
+                    console.log('Report issue button clicked for bowser:', bowserNumber);
+                    this.navigateToReport({ bowserNumber });
+                } else if (locationId) {
+                    console.log('Report issue button clicked for location:', locationId);
+                    this.navigateToReport({ locationId });
                 }
             }
         });
@@ -142,22 +144,64 @@ class PublicInterface {
                 document.getElementById('emergencyBanner').style.display = 'none';
             });
         }
+
+        // Refresh map data
+        const refreshBtn = document.getElementById('refreshMap');
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', () => {
+                this.showNotification('Refreshing map data...', 'info');
+                dataManager.initializeData()
+                  .then(() => this.loadPublicData())
+                  .catch(err => console.error('Error refreshing public data:', err));
+            });
+        }
+    }
+
+    // Display all location sites as base markers
+    displayAllLocations(locations) {
+        // Use standard marker icon for locations
+        locations.forEach(location => {
+            if (location.latitude != null && location.longitude != null) {
+                try {
+                    const popupContent = `
+                        <div class="marker-popup">
+                            <h3>${location.name}</h3>
+                            <p><strong>Address:</strong> ${location.address || 'N/A'}</p>
+                            <p><strong>Postcode:</strong> ${location.postcode || 'N/A'}</p>
+                            <p><strong>Status:</strong> ${location.status.charAt(0).toUpperCase() + location.status.slice(1)}</p>
+                            <button class="primary-btn report-issue-btn" data-location-id="${location.id}">
+                                Report Issue
+                            </button>
+                        </div>
+                    `;
+                    const marker = L.marker([location.latitude, location.longitude])
+                        .addTo(this.map)
+                        .bindPopup(popupContent);
+                    // Store under unique key
+                    this.markers['loc_' + location.id] = marker;
+                } catch (e) {
+                    console.error('Error adding location marker:', e);
+                }
+            }
+        });
     }
 
     async loadPublicData() {
         try {
             console.log('Loading public data...');
             
-            // Force reload of mock data to ensure freshness
-            if (!dataManager.bowsers.length) {
-                console.log('No data loaded, loading mock data now');
-                dataManager.loadMockData();
-            }
-            
-            // Load active deployments from data manager
-            const deployments = dataManager.deployments.filter(d => d.status === 'active');
-            const locations = dataManager.locations;
-            const alerts = dataManager.alerts;
+            // Load all locations and filter to only active ones, then sort by name
+            let locations = dataManager.getLocations().filter(loc => loc.status === 'active');
+            locations.sort((a, b) => a.name.localeCompare(b.name));
+            // Load active deployments and sort by corresponding location name
+            let deployments = dataManager.getActiveDeployments();
+            deployments.sort((d1, d2) => {
+                const loc1 = locations.find(l => l.id === d1.location_id)?.name || '';
+                const loc2 = locations.find(l => l.id === d2.location_id)?.name || '';
+                return loc1.localeCompare(loc2);
+            });
+
+            const alerts = dataManager.getEmergencyAlerts();
 
             console.log('Found deployments:', deployments.length, deployments);
             console.log('Found locations:', locations.length, locations);
@@ -167,11 +211,23 @@ class PublicInterface {
                 alert('Debug: No active deployments found! Please check console.');
             }
             
-            // Clear existing data first
+            // Clear existing markers first
             this.clearAllMarkers();
+
+            // Display base markers for all active locations
+            this.displayAllLocations(locations);
             
-            // Then display the new data
+            // Then overlay bowser deployments (sorted)
             this.displayBowserLocations(deployments, locations);
+            // After listing deployed bowsers, also list active locations with no deployment
+            const bowserList = document.getElementById('bowserList');
+            locations.forEach(location => {
+                // Skip if there's an active deployment at this location
+                if (!deployments.some(dep => dep.location_id === location.id)) {
+                    const locationCard = this.createLocationOnlyCard(location);
+                    bowserList.appendChild(locationCard);
+                }
+            });
             this.displayAlerts(alerts);
         } catch (error) {
             console.error('Error loading data:', error);
@@ -215,14 +271,14 @@ class PublicInterface {
         let markersAdded = 0;
         
         // SIMPLER APPROACH: Add SW1 markers directly first to ensure they appear
-        const sw1Locations = locations.filter(l => l.name.includes('SW1'));
+        const sw1Locations = locations.filter(l => l.name.includes('SW1') || l.address.includes('SW1'));
         console.log('SW1 locations found:', sw1Locations.length, sw1Locations);
         
         // First add SW1 locations directly to ensure they appear
         sw1Locations.forEach(location => {
-            console.log('Adding direct SW1 marker for:', location.name, 'at', location.coordinates);
+            console.log('Adding direct SW1 marker for:', location.name, 'at', [location.latitude, location.longitude]);
             try {
-                const marker = L.marker(location.coordinates)
+                const marker = L.marker([location.latitude, location.longitude])
                     .bindPopup(`<strong>${location.name}</strong><br>${location.address}`)
                     .addTo(this.map);
                     
@@ -241,15 +297,15 @@ class PublicInterface {
                 return;
             }
 
-            const location = locations.find(l => l.id === deployment.locationId);
-            const bowser = dataManager.bowsers.find(b => b.id === deployment.bowserId);
+            const location = locations.find(l => l.id === deployment.location_id);
+            const bowser = dataManager.getBowsers().find(b => b.id === deployment.bowser_id);
             
-            if (location && bowser && location.coordinates) {
-                console.log(`Adding marker for deployment ${deployment.id} at coordinates:`, location.coordinates);
+            if (location && bowser && location.latitude != null && location.longitude != null) {
+                console.log(`Adding marker for deployment ${deployment.id} at coordinates:`, [location.latitude, location.longitude]);
                 
                 try {
                     // Simpler approach to create and add marker
-                    const marker = L.marker([location.coordinates[0], location.coordinates[1]])
+                    const marker = L.marker([location.latitude, location.longitude])
                         .bindPopup(this.createMarkerPopup(location, bowser, deployment))
                         .addTo(this.map);
                     
@@ -261,27 +317,31 @@ class PublicInterface {
                     const card = this.createBowserCard(location, bowser, deployment);
                     bowserList.appendChild(card);
                 } catch (e) {
-                    console.error('Error adding marker:', e, 'for coordinates:', location.coordinates);
+                    console.error('Error adding marker:', e, 'for coordinates:', [location.latitude, location.longitude]);
                 }
             } else {
                 let missingData = [];
                 if (!location) missingData.push('location');
                 if (!bowser) missingData.push('bowser');
-                if (location && !location.coordinates) missingData.push('coordinates');
+                if (location && !location.latitude) missingData.push('latitude');
+                if (location && !location.longitude) missingData.push('longitude');
                 
                 console.warn(`⚠️ Skipping deployment ${deployment.id}: Missing ${missingData.join(', ')}`);
             }
         });
 
         console.log(`Added ${markersAdded} markers to the map`);
-
-        // Always focus on SW1 area
-        this.map.setView([51.498, -0.134], 14);
+        // Fit map to show all markers
+        const allMarkers = Object.values(this.markers);
+        if (allMarkers.length > 0) {
+            const group = new L.featureGroup(allMarkers);
+            this.map.fitBounds(group.getBounds(), { padding: [50, 50] });
+        }
     }
 
     createMarkerPopup(location, bowser, deployment) {
         // Extract postcode from address if available, or use a default
-        const postcode = this.extractPostcode(location.address) || 'SW1';
+        const postcode = location.postcode || this.extractPostcode(location.address) || '';
         
         // Use a data attribute for the bowser number to avoid JS injection
         return `
@@ -290,8 +350,17 @@ class PublicInterface {
                 <p><strong>Address:</strong> ${location.address}</p>
                 <p><strong>Postcode:</strong> ${postcode}</p>
                 <p><strong>Bowser:</strong> ${bowser.number}</p>
-                <p><strong>Supply Level:</strong> ${deployment.supplyLevel}%</p>
-                <p><strong>Status:</strong> ${this.getBowserStatus(deployment)}</p>
+                ${(() => {
+                    const key = this.getStatusForLocation(location);
+                    const label = key.charAt(0).toUpperCase() + key.slice(1);
+                    let extra = '';
+                    if (key === 'scheduled') {
+                        // Show scheduled start date
+                        const start = new Date(deployment.start_date);
+                        extra = `<p><strong>Scheduled:</strong> ${start.toLocaleDateString()}</p>`;
+                    }
+                    return `<p><strong>Status:</strong> ${label}</p>${extra}`;
+                })()}
                 <button class="primary-btn report-issue-btn" data-bowser-number="${bowser.number}">
                     Report Issue
                 </button>
@@ -304,16 +373,17 @@ class PublicInterface {
         card.className = 'bowser-card';
         
         // Extract postcode from address if available, or use a default
-        const postcode = this.extractPostcode(location.address) || 'SW1';
+        const postcode = location.postcode || this.extractPostcode(location.address) || '';
         
-        const status = this.getBowserStatus(deployment);
+        const statusKey = this.getStatusForLocation(location);
+        const statusLabel = statusKey.charAt(0).toUpperCase() + statusKey.slice(1);
         card.innerHTML = `
-            <div class="bowser-status status-${status.toLowerCase()}">${status}</div>
+            <div class="bowser-status status-${statusKey}">${statusLabel}</div>
             <h3>${location.name}</h3>
             <p><i class="fas fa-map-marker-alt"></i> ${location.address}</p>
             <p><i class="fas fa-envelope"></i> Postcode: ${postcode}</p>
             <p><i class="fas fa-truck"></i> Bowser ${bowser.number}</p>
-            <p><i class="fas fa-tint"></i> Supply Level: ${deployment.supplyLevel}%</p>
+            <p><i class="fas fa-tint"></i> Supply Level: ${Math.round((bowser.current_level / bowser.capacity) * 100)}%</p>
             <button onclick="publicInterface.navigateToReport('${bowser.number}')" class="submit-btn">
                 Report Issue
             </button>
@@ -330,14 +400,30 @@ class PublicInterface {
         return card;
     }
 
-    getBowserStatus(deployment) {
-        if (deployment.supplyLevel < 25) {
-            return 'Refilling';
-        } else if (deployment.status === 'active') {
-            return 'Available';
-        } else {
-            return 'Maintenance';
+    /**
+     * Determine status based on deployments and water level
+     * @param {Object} location - The location object
+     * @returns {string} one of 'inactive','refilling','available','maintenance'
+     */
+    getStatusForLocation(location) {
+        // Find an active or scheduled deployment for this location
+        const dep = dataManager.getActiveDeployments().find(d => d.location_id === location.id && ['active','scheduled'].includes(d.status));
+        if (!dep) {
+            return 'inactive';
         }
+        // Find the bowser assigned
+        const bowser = dataManager.getBowsers().find(b => b.id === dep.bowser_id);
+        // If water level is low, show refilling
+        if (bowser && bowser.current_level != null && bowser.capacity) {
+            const pct = (bowser.current_level / bowser.capacity) * 100;
+            if (pct < 25) return 'refilling';
+        }
+        // Active deployments are 'available'
+        if (dep.status === 'active') return 'available';
+        // Scheduled deployments are 'scheduled'
+        if (dep.status === 'scheduled') return 'scheduled';
+        // Any other state treat as maintenance
+        return 'maintenance';
     }
 
     displayAlerts(alerts) {
@@ -480,19 +566,14 @@ class PublicInterface {
         // Clear existing markers before adding new ones
         this.clearAllMarkers();
 
-        // Get deployments that match the filters
-        const deployments = dataManager.deployments.filter(deployment => {
-            // If deployment is active, check if it matches both area and status filters
-            if (deployment.status !== 'active') {
-                return false;
-            }
-
-            const locationArea = this.getArea(deployment.locationId);
-            console.log(`Deployment ${deployment.id} is in area: ${locationArea}`);
+        // Filter active deployments from data manager
+        const deployments = dataManager.getActiveDeployments().filter(deployment => {
+            // Check area/status filters
+            const locationArea = this.getArea(deployment.location_id);
             
             const matchesArea = area === 'all' || locationArea === area;
-            const bowserStatus = this.getBowserStatus(deployment);
-            const matchesStatus = status === 'all' || bowserStatus.toLowerCase() === status;
+            const bowserStatus = this.getStatusForLocation(dataManager.getLocations().find(l => l.id === deployment.location_id));
+            const matchesStatus = status === 'all' || bowserStatus === status;
             
             return matchesArea && matchesStatus;
         });
@@ -500,13 +581,13 @@ class PublicInterface {
         console.log(`Found ${deployments.length} deployments matching filters`);
 
         // Display the filtered deployments
-        const locations = dataManager.locations;
+        const locations = dataManager.getLocations();
         this.displayBowserLocations(deployments, locations);
     }
 
     getArea(locationId) {
         // Get area from location name or address
-        const location = dataManager.locations.find(l => l.id === locationId);
+        const location = dataManager.getLocations().find(l => l.id === locationId || l.id === locationId.toString());
         if (location) {
             // Check if location name or address contains the area code
             if (location.name.includes('SW1') || location.address.includes('SW1')) {
@@ -518,8 +599,8 @@ class PublicInterface {
             }
             
             // Fallback to coordinate-based estimation
-            const lat = location.coordinates[0];
-            const lng = location.coordinates[1];
+            const lat = location.latitude;
+            const lng = location.longitude;
             
             // Westminster/Victoria area (SW1)
             if (lat >= 51.49 && lat <= 51.5 && lng >= -0.14 && lng <= -0.12) {
@@ -535,18 +616,57 @@ class PublicInterface {
         return 'sw1';
     }
 
-    navigateToReport(bowserNumber) {
-        console.log('Navigating to report form for bowser:', bowserNumber);
-        
-        // Set the bowser number in the form
-        const bowserInput = document.getElementById('bowserNumber');
-        if (bowserInput) {
-            bowserInput.value = bowserNumber;
-            console.log('Set bowser number in form:', bowserNumber);
-        } else {
-            console.error('Could not find bowserNumber input element');
+    navigateToReport(identifier) {
+        let bowserNumber = null;
+        let locationId = null;
+        let locationName = null;
+
+        if (identifier.bowserNumber) {
+            bowserNumber = identifier.bowserNumber;
+            console.log('Navigating to report form for bowser:', bowserNumber);
+        } else if (identifier.locationId) {
+            locationId = identifier.locationId;
+            console.log('Navigating to report form for location ID:', locationId);
+            // Attempt to find location name for context
+            const location = dataManager.getLocations().find(l => l.id === locationId);
+            if (location) {
+                locationName = location.name;
+                console.log('Found location name:', locationName);
+            }
+            // If a bowser is deployed at this location, automatically fill its number
+            const deploymentForLocation = dataManager.getActiveDeployments().find(dep => dep.location_id === locationId);
+            if (deploymentForLocation) {
+                const bowserObj = dataManager.getBowsers().find(b => b.id === deploymentForLocation.bowser_id);
+                if (bowserObj) {
+                    bowserNumber = bowserObj.number;
+                    console.log('Found bowser number for location:', bowserNumber);
+                }
+            }
         }
-        
+
+        // Set hidden form inputs
+        const bowserInput = document.getElementById('bowserNumber');
+        const locationInput = document.getElementById('locationId'); // Assuming you add this input
+        const locationNameDisplay = document.getElementById('reportLocationName'); // Optional: Display location name
+
+        if (bowserInput) {
+            bowserInput.value = bowserNumber || ''; // Set to bowser number or empty
+        }
+        // Add a hidden input for locationId if you need it server-side
+        // if (locationInput) {
+        //    locationInput.value = locationId || '';
+        // }
+
+        // Display location name if reporting for a location without a bowser
+        if (locationNameDisplay) {
+            if (locationName) {
+                locationNameDisplay.textContent = `Reporting for: ${locationName}`;
+                locationNameDisplay.style.display = 'block';
+            } else {
+                locationNameDisplay.style.display = 'none';
+            }
+        }
+
         // Scroll to the report section
         const reportSection = document.getElementById('report-section');
         if (reportSection) {
@@ -768,12 +888,38 @@ class PublicInterface {
             }
         });
     }
+
+    createLocationOnlyCard(location) {
+        // Create a card for active locations with no bowser deployment
+        const card = document.createElement('div');
+        card.className = 'bowser-card location-only';
+        // Compute status for a location with no active bowser -> should be 'inactive'
+        const statusKey = this.getStatusForLocation(location);
+        const statusLabel = statusKey.charAt(0).toUpperCase() + statusKey.slice(1);
+        const postcode = this.extractPostcode(location.address) || location.postcode || '';
+        card.innerHTML = `
+            <div class="location-only-status">${statusLabel}</div>
+            <h3>${location.name}</h3>
+            <p><i class="fas fa-map-marker-alt"></i> ${location.address}</p>
+            <p><i class="fas fa-envelope"></i> Postcode: ${postcode}</p>
+            <button class="primary-btn report-issue-btn" data-location-id="${location.id}">
+                Report Issue
+            </button>
+        `;
+        card.addEventListener('click', () => {
+            const marker = this.markers['loc_' + location.id];
+            if (marker) {
+                this.map.setView(marker.getLatLng(), 15);
+                marker.openPopup();
+            }
+        });
+        return card;
+    }
 }
 
-// Initialize public interface when the page loads
-let publicInterface;
+// Initialize the public interface when the DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    publicInterface = new PublicInterface();
+    new PublicInterface();
 });
 
 // Mobile Navigation Toggle
@@ -783,10 +929,9 @@ document.addEventListener('DOMContentLoaded', () => {
     navToggle.innerHTML = '<i class="fas fa-bars"></i>';
     
     const navLinks = document.querySelector('.nav-links');
-    const navbar = document.querySelector('.navbar');
-    
-    if (navbar && navLinks) {
-        navbar.insertBefore(navToggle, navLinks);
+    // Use the parent of navLinks for insertion
+    if (navLinks && navLinks.parentNode) {
+        navLinks.parentNode.insertBefore(navToggle, navLinks);
         
         navToggle.addEventListener('click', () => {
             navLinks.classList.toggle('active');
@@ -797,7 +942,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Close mobile menu when clicking outside
         document.addEventListener('click', (e) => {
-            if (!navbar.contains(e.target) && navLinks.classList.contains('active')) {
+            if (!navLinks.parentNode.contains(e.target) && navLinks.classList.contains('active')) {
                 navLinks.classList.remove('active');
                 navToggle.innerHTML = '<i class="fas fa-bars"></i>';
             }

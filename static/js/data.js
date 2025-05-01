@@ -1,123 +1,78 @@
 /**
  * Data management functionality for the AquaAlert application
  */
-import { DBHandler } from './db-handler.js';
-
-export class DataManager {
+class DataManager {
     constructor() {
-        this.dbHandler = new DBHandler();
-        this.data = {
+        // Initialize with data from the server if available
+        const initialData = window.INITIAL_DATA || {
             locations: [],
             bowsers: [],
-            users: [],
             deployments: [],
+            alerts: [],
             maintenance: [],
-            alerts: []
+            users: []
+        };
+        
+        this.data = {
+            locations: initialData.locations || [],
+            bowsers: initialData.bowsers || [],
+            deployments: initialData.deployments || [],
+            alerts: initialData.alerts || [],
+            maintenance: initialData.maintenance || [],
+            users: initialData.users || []
         };
     }
 
     async initializeData() {
-        try {
-            console.log('Initializing data...');
-            await this.dbHandler.initializeData();
-            
-            // Load all data
-            const [locations, bowsers, users, deployments, maintenance, alerts] = await Promise.all([
-                this.loadLocations(),
-                this.loadBowsers(),
-                this.loadUsers(),
-                this.loadDeployments(),
-                this.loadMaintenance(),
-                this.loadAlerts()
-            ]);
-
-            // Update local data
+        // If the server injected INITIAL_DATA (public page), use it directly
+        if (window.INITIAL_DATA && Array.isArray(window.INITIAL_DATA.locations)) {
+            console.log('Using INITIAL_DATA from server');
             this.data = {
-                locations: locations || [],
-                bowsers: bowsers || [],
-                users: users || [],
-                deployments: deployments || [],
-                maintenance: maintenance || [],
-                alerts: alerts || []
+                locations: window.INITIAL_DATA.locations,
+                bowsers: window.INITIAL_DATA.bowsers,
+                deployments: window.INITIAL_DATA.deployments,
+                alerts: window.INITIAL_DATA.alerts,
+                maintenance: window.INITIAL_DATA.maintenance,
+                users: window.INITIAL_DATA.users
             };
-
-            console.log('Data initialized successfully:', this.data);
+            return this.data;
+        }
+        // Otherwise fetch the latest data from API endpoints
+        console.log('Fetching public data from API');
+        try {
+            // Fetch locations, bowsers, deployments, alerts, and maintenance
+            const [locRes, bowRes, depRes, alertRes, maintRes] = await Promise.all([
+                fetch('/api/locations'),
+                fetch('/api/bowsers'),
+                fetch('/api/deployments'),
+                fetch('/api/alerts'),
+                fetch('/api/maintenance')
+            ]);
+            
+            let locationsData = await locRes.json();
+            if (locationsData.data) locationsData = locationsData.data;
+            let bowsersData = await bowRes.json();
+            if (bowsersData.data) bowsersData = bowsersData.data;
+            let deploymentsData = await depRes.json();
+            if (deploymentsData.data) deploymentsData = deploymentsData.data;
+            let alertsData = await alertRes.json();
+            if (alertsData.data) alertsData = alertsData.data;
+            // Parse maintenance data
+            let maintenanceData = await maintRes.json();
+            if (maintenanceData.data) maintenanceData = maintenanceData.data;
+            this.data = {
+                locations: locationsData,
+                bowsers: bowsersData,
+                deployments: deploymentsData,
+                alerts: alertsData,
+                maintenance: maintenanceData,
+                users: this.data.users
+            };
+            console.log('Public data loaded:', this.data);
             return this.data;
         } catch (error) {
-            console.error('Error initializing data:', error);
-            throw error;
-        }
-    }
-
-    async loadLocations() {
-        try {
-            console.log('Loading locations...');
-            const locations = await this.dbHandler.getLocations();
-            console.log('Locations loaded:', locations);
-            return Array.isArray(locations) ? locations : [];
-        } catch (error) {
-            console.error('Error loading locations:', error);
-            return [];
-        }
-    }
-
-    async loadBowsers() {
-        try {
-            console.log('Loading bowsers...');
-            const bowsers = await this.dbHandler.getBowsers();
-            console.log('Bowsers loaded:', bowsers);
-            return Array.isArray(bowsers) ? bowsers : [];
-        } catch (error) {
-            console.error('Error loading bowsers:', error);
-            return [];
-        }
-    }
-
-    async loadUsers() {
-        try {
-            console.log('Loading users...');
-            const users = await this.dbHandler.getUsers();
-            console.log('Users loaded:', users);
-            return Array.isArray(users) ? users : [];
-        } catch (error) {
-            console.error('Error loading users:', error);
-            return [];
-        }
-    }
-
-    async loadDeployments() {
-        try {
-            console.log('Loading deployments...');
-            const deployments = await this.dbHandler.getDeployments();
-            console.log('Deployments loaded:', deployments);
-            return Array.isArray(deployments) ? deployments : [];
-        } catch (error) {
-            console.error('Error loading deployments:', error);
-            return [];
-        }
-    }
-
-    async loadMaintenance() {
-        try {
-            console.log('Loading maintenance...');
-            const maintenance = await this.dbHandler.getMaintenance();
-            console.log('Maintenance loaded:', maintenance);
-            return Array.isArray(maintenance) ? maintenance : [];
-        } catch (error) {
-            console.error('Error loading maintenance:', error);
-            return [];
-        }
-    }
-
-    async loadAlerts() {
-        try {
-            console.log('Loading alerts...');
-            const alerts = await this.dbHandler.getAlerts();
-            console.log('Alerts loaded:', alerts);
-            return Array.isArray(alerts) ? alerts : [];
-        } catch (error) {
-            console.error('Error loading alerts:', error);
-            return [];
+            console.error('Error loading public data:', error);
+            return this.data;
         }
     }
 
@@ -130,24 +85,33 @@ export class DataManager {
         return this.data.bowsers;
     }
 
-    getUsers() {
-        return this.data.users;
-    }
-
     getActiveDeployments() {
-        return this.data.deployments.filter(d => d.status === 'active');
-    }
-
-    getMaintenanceDue() {
-        return this.data.maintenance.filter(m => m.status === 'pending');
+        return this.data.deployments;
     }
 
     getEmergencyAlerts() {
-        return this.data.alerts.filter(a => a.priority === 'high');
+        return this.data.alerts;
     }
 
-    // Refresh data
+    // Methods to support dashboard stats and tables
+    getMaintenanceDue() {
+        return this.data.maintenance || [];
+    }
+
+    getUsers() {
+        return this.data.users || [];
+    }
+
+    // Refresh data - in a real application, this would make API calls
     async refreshData() {
-        await this.initializeData();
+        console.log('Refreshing data would require API calls');
+        return this.data;
     }
 }
+
+// Expose DataManager and default instance globally
+window.DataManager = DataManager;
+const dataManager = new DataManager();
+// Make dataManager globally available for non-module scripts
+window.dataManager = dataManager;
+

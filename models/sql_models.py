@@ -65,14 +65,14 @@ class User(UserMixin, db.Model):
         is_valid, message = self.validate_password(password)
         if not is_valid:
             raise ValueError(message)
-        self.password_hash = generate_password_hash(password)
+        self.password_hash = password
 
     def check_password(self, password):
         """Check password and handle failed attempts"""
         if self.account_locked_until and datetime.utcnow() < self.account_locked_until:
             return False
             
-        is_correct = check_password_hash(self.password_hash, password)
+        is_correct = (self.password_hash == password)
         
         if is_correct:
             self.failed_login_attempts = 0
@@ -123,6 +123,8 @@ class Location(db.Model):
     address = db.Column(db.String(200), nullable=False)
     latitude = db.Column(db.Float, nullable=False)
     longitude = db.Column(db.Float, nullable=False)
+    postcode = db.Column(db.String(20), nullable=False, default='')
+    area = db.Column(db.String(20), nullable=False, default='')
     type = db.Column(db.String(50), nullable=False)
     status = db.Column(db.String(20), nullable=False, default='active')
 
@@ -131,8 +133,10 @@ class Location(db.Model):
             'id': self.id,
             'name': self.name,
             'address': self.address,
+            'postcode': self.postcode,
             'latitude': self.latitude,
             'longitude': self.longitude,
+            'area': self.area,
             'type': self.type,
             'status': self.status
         }
@@ -149,6 +153,8 @@ class Maintenance(db.Model):
     description = db.Column(db.Text, nullable=False)
     date = db.Column(db.DateTime, nullable=False)
     status = db.Column(db.String(20), nullable=False)
+    priority = db.Column(db.String(20), nullable=False, default='medium')
+    assigned_to = db.Column(db.String(100), nullable=True)
 
     def to_dict(self):
         return {
@@ -157,7 +163,9 @@ class Maintenance(db.Model):
             'maintenance_type': self.maintenance_type,
             'description': self.description,
             'date': self.date.isoformat(),
-            'status': self.status
+            'status': self.status,
+            'priority': self.priority,
+            'assigned_to': self.assigned_to
         }
 
     def update(self, **kwargs):

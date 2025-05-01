@@ -64,6 +64,8 @@
                         <h5 class="card-title mb-0">Maintenance Schedule</h5>
                         <div class="calendar-nav">
                             <button id="prevWeek" class="btn btn-sm btn-outline-secondary"><i class="fas fa-chevron-left"></i></button>
+                            <button id="todayBtn" class="btn btn-sm btn-outline-secondary mx-2">Today</button>
+                            <input type="date" id="weekPicker" class="form-control form-control-sm mx-2" />
                             <span id="currentWeek" class="mx-2">March 17 - 23, 2025</span>
                             <button id="nextWeek" class="btn btn-sm btn-outline-secondary"><i class="fas fa-chevron-right"></i></button>
                         </div>
@@ -88,7 +90,25 @@
                         </div>
                     </div>
                     <div id="maintenanceRecords" class="card-body">
-                        <!-- Records will be populated by JavaScript -->
+                        <!-- Records will be displayed here -->
+                        <div class="table-responsive">
+                            <table class="table table-striped" id="maintenanceTable">
+                                <thead>
+                                    <tr>
+                                        <th>Bowser</th>
+                                        <th>Type</th>
+                                        <th>Description</th>
+                                        <th>Status</th>
+                                        <th>Priority</th>
+                                        <th>Scheduled Date</th>
+                                        <th>Assigned To</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="maintenanceTbody">
+                                    <!-- JS will inject rows here -->
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -105,6 +125,7 @@
                 </div>
                 <div class="modal-body">
                     <form id="addMaintenanceForm">
+                        <input type="hidden" id="maintenanceId">
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label for="bowserId" class="form-label">Bowser</label>
@@ -168,6 +189,8 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="editMaintBtn">Edit</button>
+                    <button type="button" class="btn btn-danger" id="deleteMaintBtn">Delete</button>
                 </div>
             </div>
         </div>
@@ -186,9 +209,11 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{{ url_for('static', filename='js/config.js') }}"></script>
-<script src="{{ url_for('static', filename='js/utils.js') }}"></script>
-<script src="{{ url_for('static', filename='js/db-handler.js') }}"></script>
-<script src="{{ url_for('static', filename='js/data.js') }}"></script>
-<script src="{{ url_for('static', filename='js/maintenance.js') }}"></script>
+<!-- DataTables CSS & JS -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css">
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
+<!-- Load maintenance logic as ES module -->
+<script type="module" src="{{ url_for('static', filename='js/maintenance.js') }}"></script>
 {% endblock %}

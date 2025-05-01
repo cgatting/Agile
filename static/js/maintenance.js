@@ -1,11 +1,18 @@
+// Import the shared DataManager instance
+import { dataManager } from './data.js';
+
 /**
  * Maintenance management functionality for AquaAlert
  */
-class MaintenanceManager {
+export class MaintenanceManager {
     constructor() {
         this.currentView = 'list';
         this.currentWeek = new Date();
-        this.dbHandler = new DatabaseHandler();
+        // Use the shared dataManager for fetching data
+        this.dataManager = dataManager;
+        // Initialize Bootstrap modals
+        this.addModal = new bootstrap.Modal(document.getElementById('addMaintenanceModal'));
+        this.detailsModal = new bootstrap.Modal(document.getElementById('maintenanceDetailsModal'));
         this.initializeEventListeners();
         this.loadMaintenanceData();
     }
@@ -29,38 +36,41 @@ class MaintenanceManager {
         });
 
         // Modal handlers
-        const addMaintenanceBtn = document.getElementById('addMaintenanceBtn');
-        const addMaintenanceModal = document.getElementById('addMaintenanceModal');
-        const closeModalBtns = document.querySelectorAll('.close-modal, .cancel-btn');
-
-        addMaintenanceBtn.addEventListener('click', () => {
-            this.populateBowserSelect();
-            addMaintenanceModal.style.display = 'block';
+        document.getElementById('addMaintenanceBtn').addEventListener('click', async () => {
+            // Hide details modal in case it's open
+            this.detailsModal.hide();
+            // Populate and reset form for new record
+            await this.populateBowserSelect();
+            const form = document.getElementById('addMaintenanceForm');
+            form.reset();
+            document.getElementById('maintenanceId').value = '';
+            document.getElementById('addMaintenanceModalLabel').textContent = 'Schedule Maintenance';
+            document.getElementById('scheduleMaintBtn').textContent = 'Schedule Maintenance';
+            this.addModal.show();
         });
 
-        closeModalBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                addMaintenanceModal.style.display = 'none';
-                document.getElementById('maintenanceDetailsModal').style.display = 'none';
-            });
+        // Form submission: schedule/save button
+        document.getElementById('scheduleMaintBtn').addEventListener('click', () => this.addNewMaintenance());
+        // Today button and week picker
+        document.getElementById('todayBtn').addEventListener('click', () => {
+            this.currentWeek = new Date();
+            this.updateCalendar();
         });
-
-        // Form submission
-        document.getElementById('addMaintenanceForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.addNewMaintenance();
+        document.getElementById('weekPicker').addEventListener('change', (e) => {
+            this.currentWeek = new Date(e.target.value);
+            this.updateCalendar();
         });
+        // Edit and delete actions
+        document.getElementById('editMaintBtn').addEventListener('click', () => this.openEditModal());
+        document.getElementById('deleteMaintBtn').addEventListener('click', () => this.deleteMaintenance());
     }
 
     async loadMaintenanceData() {
         try {
-            // Load data from the database if not already loaded
-            if (!this.dbHandler.dataLoaded) {
-                await this.dbHandler.loadData();
-            }
-            
-            // Get maintenance records from the database
-            const records = this.dbHandler.getMaintenanceRecords();
+            // Ensure data is loaded/refreshed
+            await this.dataManager.initializeData();
+            // Pull maintenance records from dataManager
+            const records = this.dataManager.getMaintenanceDue();
             this.updateCalendar();
             this.displayMaintenanceRecords(records);
         } catch (error) {
@@ -109,70 +119,123 @@ class MaintenanceManager {
             }
 
             // Add date to header
-            const dateHeader = days[i].querySelector('.day-header');
-            dateHeader.textContent = `${days[i].querySelector('.day-header').textContent}\n${
-                currentDate.getDate()}`;
+            const header = days[i].querySelector('.day-header');
+            header.textContent = `${header.textContent}\n${currentDate.getDate()}`;
 
-            // Find maintenance events for this day
-            const events = this.dbHandler.getMaintenanceRecords().filter(record => {
-                const scheduledDate = new Date(record.scheduled_date);
-                return scheduledDate.toDateString() === currentDate.toDateString();
+            // Find maintenance records for this day using 'date' field
+            const dayRecords = this.dataManager.getMaintenanceDue().filter(record => {
+                const recordDate = new Date(record.date);
+                return recordDate.toDateString() === currentDate.toDateString();
             });
 
             // Add events to calendar
-            events.forEach(event => {
+            dayRecords.forEach(record => {
                 const eventElement = document.createElement('div');
-                eventElement.className = `maintenance-event event-${event.priority}`;
-                const bowser = dataManager.getBowserById(event.bowserId);
-                eventElement.textContent = `${event.type}: Bowser ${bowser?.number || 'Unknown'}`;
-                eventElement.addEventListener('click', () => this.viewMaintenanceDetails(event.id));
+                eventElement.className = `maintenance-event event-${record.priority}`;
+                const bowser = this.dataManager.getBowsers().find(b => b.id === record.bowser_id);
+                eventElement.textContent = `${record.maintenance_type}: Bowser ${bowser?.number || 'Unknown'}`;
+                eventElement.addEventListener('click', () => this.viewMaintenanceDetails(record.id));
                 days[i].appendChild(eventElement);
             });
         }
     }
 
     displayMaintenanceRecords(records) {
-        const container = document.getElementById('maintenanceRecords');
-        container.innerHTML = '';
-
-        if (this.currentView === 'list') {
+        // If the table element exists, populate DataTable
+        const tableElem = document.getElementById('maintenanceTable');
+        if (tableElem) {
+            // Clear existing DataTable if initialized
+            if ($.fn.DataTable.isDataTable('#maintenanceTable')) {
+                $('#maintenanceTable').DataTable().clear().destroy();
+            }
+            const tbody = document.getElementById('maintenanceTbody');
+            tbody.innerHTML = '';
             records.forEach(record => {
-                const card = this.createMaintenanceCard(record);
-                container.appendChild(card);
+                const bowser = this.dataManager.getBowsers().find(b => b.id === record.bowser_id);
+                const statusText = record.status.replace('_', '-');
+                const dateText = new Date(record.date).toLocaleString();
+                const priorityText = record.priority.charAt(0).toUpperCase() + record.priority.slice(1);
+                const assignedTo = record.assigned_to || '';
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${bowser?.number || 'Unknown'}</td>
+                    <td>${record.maintenance_type}</td>
+                    <td>${record.description}</td>
+                    <td><span class="status-${statusText}">${statusText.charAt(0).toUpperCase() + statusText.slice(1)}</span></td>
+                    <td><span class="priority-${record.priority}">${priorityText}</span></td>
+                    <td>${dateText}</td>
+                    <td>${assignedTo}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+            // Initialize DataTable with options
+            $('#maintenanceTable').DataTable({
+                responsive: true,
+                pageLength: 10
             });
         } else {
-            this.displayKanbanView(records);
+            // Fallback to card/kanban view
+            const container = document.getElementById('maintenanceRecords');
+            container.innerHTML = '';
+            if (this.currentView === 'list') {
+                records.forEach(record => {
+                    const card = this.createMaintenanceCard(record);
+                    container.appendChild(card);
+                });
+            } else {
+                this.displayKanbanView(records);
+            }
         }
     }
 
     createMaintenanceCard(record) {
-        const bowser = this.dbHandler.getBowserById(record.bowser_id);
+        const bowser = this.dataManager.getBowsers().find(b => b.id === record.bowser_id);
         const card = document.createElement('div');
         card.className = 'maintenance-card';
+        card.setAttribute('draggable', true);
         
-        // Convert status format (e.g., in_progress to in-progress)
-        const status = record.status.replace('_', '-');
-        
+        // Display maintenance record using correct fields
+        const statusText = record.status.replace('_', '-');
         card.innerHTML = `
             <div class="maintenance-info">
                 <div>
                     <h3>Bowser ${bowser?.number || 'Unknown'}</h3>
                     <p>${record.description}</p>
-                    <div class="maintenance-status status-${status}">
-                        ${status.charAt(0).toUpperCase() + status.slice(1)}
+                    <div class="maintenance-status status-${statusText}">
+                        ${statusText.charAt(0).toUpperCase() + statusText.slice(1)}
                     </div>
-                    <div class="priority-indicator priority-${record.priority || 'medium'}">
-                        <i class="fas fa-flag"></i>
-                        ${(record.priority || 'Medium').charAt(0).toUpperCase() + (record.priority || 'medium').slice(1)} Priority
+                    <div class="priority-indicator priority-${record.priority}">
+                        <i class="fas fa-flag"></i> ${record.priority.charAt(0).toUpperCase() + record.priority.slice(1)}
+                    </div>
+                    <div class="assigned-to"><i class="fas fa-user-cog"></i> ${record.assigned_to}</div>
+                    <div class="status-update">
+                        <select class="form-select form-select-sm status-select">
+                            <option value="scheduled" ${record.status==='scheduled'?'selected':''}>Scheduled</option>
+                            <option value="in-progress" ${record.status==='in_progress'?'selected':''}>In Progress</option>
+                            <option value="completed" ${record.status==='completed'?'selected':''}>Completed</option>
+                            <option value="overdue" ${record.status==='overdue'?'selected':''}>Overdue</option>
+                        </select>
                     </div>
                 </div>
                 <div>
-                    <p><i class="fas fa-calendar"></i> ${new Date(record.scheduled_date).toLocaleDateString()}</p>
-                    <p><i class="fas fa-user-cog"></i> ${record.assigned_to}</p>
+                    <p><i class="fas fa-calendar"></i> ${new Date(record.date).toLocaleDateString()}</p>
                 </div>
             </div>
         `;
-
+        // Handle status change
+        card.querySelector('.status-select').addEventListener('change', async (e) => {
+            const newStatus = e.target.value.replace('-', '_');
+            await fetch(`/api/maintenance/${record.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: newStatus })
+            });
+            this.loadMaintenanceData();
+        });
+        // Drag start
+        card.addEventListener('dragstart', (e) => {
+            e.dataTransfer.setData('text/plain', record.id);
+        });
         card.addEventListener('click', () => this.viewMaintenanceDetails(record.id));
         return card;
     }
@@ -203,6 +266,18 @@ class MaintenanceManager {
             `;
 
             const cardsContainer = column.querySelector('.kanban-cards');
+            // Allow dropping to change status
+            cardsContainer.addEventListener('dragover', e => e.preventDefault());
+            cardsContainer.addEventListener('drop', async e => {
+                e.preventDefault();
+                const id = e.dataTransfer.getData('text/plain');
+                await fetch(`/api/maintenance/${id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: status.replace('-', '_') })
+                });
+                this.loadMaintenanceData();
+            });
             statusRecords.forEach(record => {
                 cardsContainer.appendChild(this.createMaintenanceCard(record));
             });
@@ -213,14 +288,17 @@ class MaintenanceManager {
 
     async viewMaintenanceDetails(id) {
         // Get the maintenance record by ID
-        const record = await this.dbHandler.getMaintenanceRecordById(id);
+        const record = this.dataManager.getMaintenanceDue().find(r => r.id === id);
         if (!record) return;
 
-        const bowser = this.dbHandler.getBowserById(record.bowser_id);
+        const bowser = this.dataManager.getBowsers().find(b => b.id === record.bowser_id);
         const modal = document.getElementById('maintenanceDetailsModal');
         const content = document.getElementById('maintenanceDetailsContent');
+        // Store for edit/delete
+        this.currentRecord = record;
+        document.getElementById('maintenanceId').value = record.id;
         
-        // Convert status format (e.g., in_progress to in-progress)
+        // Convert status format
         const status = record.status.replace('_', '-');
 
         content.innerHTML = `
@@ -231,19 +309,19 @@ class MaintenanceManager {
                 </div>
                 <div class="detail-item">
                     <label>Type</label>
-                    <span>${record.type}</span>
+                    <span>${record.maintenance_type}</span>
                 </div>
                 <div class="detail-item">
                     <label>Status</label>
-                    <span class="status-${status}">${status}</span>
-                </div>
-                <div class="detail-item">
-                    <label>Priority</label>
-                    <span class="priority-${record.priority || 'medium'}">${(record.priority || 'Medium')}</span>
+                    <span class="status-${status}">${status.charAt(0).toUpperCase() + status.slice(1)}</span>
                 </div>
                 <div class="detail-item">
                     <label>Scheduled Date</label>
-                    <span>${new Date(record.scheduled_date).toLocaleString()}</span>
+                    <span>${new Date(record.date).toLocaleString()}</span>
+                </div>
+                <div class="detail-item">
+                    <label>Priority</label>
+                    <span class="priority-${record.priority}">${record.priority.charAt(0).toUpperCase() + record.priority.slice(1)}</span>
                 </div>
                 <div class="detail-item">
                     <label>Assigned To</label>
@@ -256,51 +334,66 @@ class MaintenanceManager {
             </div>
         `;
 
-        modal.style.display = 'block';
+        this.detailsModal.show();
     }
 
     async addNewMaintenance() {
         const form = document.getElementById('addMaintenanceForm');
+        const id = document.getElementById('maintenanceId').value;
         const formData = {
             bowser_id: form.bowserId.value,
-            type: form.maintenanceType.value,
+            maintenance_type: form.maintenanceType.value,
             description: form.description.value,
-            scheduled_date: form.scheduledDate.value,
+            date: form.scheduledDate.value,
             priority: form.priority.value,
             assigned_to: form.assignedTo.value,
             status: 'scheduled'
         };
 
         try {
-            // Add to database
-            await fetch(`${this.dbHandler.API_BASE_URL}/maintenance`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(formData)
-            });
-
-            // Update UI
-            await this.loadMaintenanceData();
-            document.getElementById('addMaintenanceModal').style.display = 'none';
-            this.showNotification('Maintenance scheduled successfully', 'success');
+            if (id) {
+                // Update existing record
+                await fetch(`/api/maintenance/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+                this.showNotification('Maintenance updated successfully', 'success');
+            } else {
+                // Create new record
+                await fetch(`/api/maintenance`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+                this.showNotification('Maintenance scheduled successfully', 'success');
+            }
+            // Clear edit id
+            document.getElementById('maintenanceId').value = '';
         } catch (error) {
-            console.error('Error adding maintenance record:', error);
-            this.showNotification('Error scheduling maintenance', 'error');
+            console.error('Error saving maintenance record:', error);
+            this.showNotification('Error saving maintenance', 'error');
+        } finally {
+            await this.loadMaintenanceData();
+            this.addModal.hide();
         }
     }
 
-    populateBowserSelect() {
+    // Populate bowser dropdown by fetching available bowsers
+    async populateBowserSelect() {
         const select = document.getElementById('bowserId');
         select.innerHTML = '';
-        
-        this.dbHandler.getBowsers().forEach(bowser => {
-            const option = document.createElement('option');
-            option.value = bowser.id;
-            option.textContent = `Bowser ${bowser.number}`;
-            select.appendChild(option);
-        });
+        try {
+            const bowsers = this.dataManager.getBowsers();
+            bowsers.forEach(bowser => {
+                const option = document.createElement('option');
+                option.value = bowser.id;
+                option.textContent = `Bowser ${bowser.number}`;
+                select.appendChild(option);
+            });
+        } catch (error) {
+            console.error('Error populating bowser select:', error);
+        }
     }
 
     filterRecords() {
@@ -309,12 +402,13 @@ class MaintenanceManager {
         const statusFilter = document.getElementById('statusFilter').value;
         const priorityFilter = document.getElementById('priorityFilter').value;
 
-        let records = this.dbHandler.getMaintenanceRecords();
+        let records = this.dataManager.getMaintenanceDue();
 
         // Apply filters
         records = records.filter(record => {
-            const matchesSearch = record.description.toLowerCase().includes(searchTerm);
-            const matchesType = typeFilter === 'all' || record.type === typeFilter;
+            const matchesSearch = record.description.toLowerCase().includes(searchTerm) ||
+                                  this.dataManager.getBowsers().find(b => b.id === record.bowser_id)?.number.toString().toLowerCase().includes(searchTerm);
+            const matchesType = typeFilter === 'all' || record.maintenance_type === typeFilter;
             
             // Convert status format for comparison (e.g., in_progress to in-progress)
             const recordStatus = record.status.replace('_', '-');
@@ -362,15 +456,51 @@ class MaintenanceManager {
             }, 3000);
         }
     }
+
+    // Open modal in edit mode, pre-populate form
+    async openEditModal() {
+        // Hide current details display and show form instead
+        this.detailsModal.hide();
+        const record = this.currentRecord;
+        if (!record) return;
+        // Populate bowsers then fill form for editing
+        await this.populateBowserSelect();
+        const form = document.getElementById('addMaintenanceForm');
+        form.reset();
+        document.getElementById('maintenanceId').value = record.id;
+        document.getElementById('bowserId').value = record.bowser_id;
+        document.getElementById('maintenanceType').value = record.maintenance_type;
+        document.getElementById('description').value = record.description;
+        document.getElementById('scheduledDate').value = new Date(record.date).toISOString().slice(0,16);
+        document.getElementById('priority').value = record.priority;
+        document.getElementById('assignedTo').value = record.assigned_to;
+        document.getElementById('addMaintenanceModalLabel').textContent = 'Edit Maintenance';
+        document.getElementById('scheduleMaintBtn').textContent = 'Save Changes';
+        this.addModal.show();
+    }
+    
+    // Delete current maintenance record
+    async deleteMaintenance() {
+        const id = document.getElementById('maintenanceId').value;
+        if (!id || !confirm('Are you sure you want to delete this maintenance record?')) return;
+        try {
+            await fetch(`/api/maintenance/${id}`, { method: 'DELETE' });
+            this.detailsModal.hide();
+            this.showNotification('Maintenance record deleted', 'success');
+            this.loadMaintenanceData();
+        } catch (error) {
+            console.error('Error deleting maintenance:', error);
+            this.showNotification('Error deleting maintenance', 'error');
+        }
+    }
 }
 
 // Initialize maintenance manager when the page loads
-let maintenanceManager;
 document.addEventListener('DOMContentLoaded', async () => {
     // Set CONFIG to use real data instead of mock data
     if (typeof CONFIG !== 'undefined') {
         CONFIG.mockData.enabled = false;
     }
     
-    maintenanceManager = new MaintenanceManager();
+    const maintenanceManager = new MaintenanceManager();
 });

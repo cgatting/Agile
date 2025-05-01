@@ -1,18 +1,27 @@
+from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from datetime import datetime, timedelta
 import uuid
 import os
 from werkzeug.security import generate_password_hash
-from sqlalchemy import event
+from sqlalchemy import event, inspect
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import SQLAlchemyError
 import logging
+from config import Config
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Initialize Flask app
+app = Flask(__name__)
+
+# Use configuration from Config class
+app.config.from_object(Config)
+
+# Initialize SQLAlchemy without binding to app
 db = SQLAlchemy()
 migrate = Migrate()
 
@@ -23,25 +32,37 @@ def set_sqlite_pragma(dbapi_connection, connection_record):
     cursor.execute("PRAGMA foreign_keys=ON")
     cursor.close()
 
+def init_db(app):
+    """Initialize database with app context"""
+    db.init_app(app)
+    migrate.init_app(app, db)
+
 def initialize_database(app):
     """Initialize the database with proper error handling and security features"""
     try:
-        # Configure SQLAlchemy
-        app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///app.db')
-        app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-        app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-            'pool_pre_ping': True,
-            'pool_recycle': 300,
-        }
-
         # Initialize extensions
-        db.init_app(app)
-        migrate.init_app(app, db)
+        init_db(app)
 
         # Create tables
         with app.app_context():
             try:
                 db.create_all()
+                # Ensure the 'area' column exists in the Location table
+                inspector = inspect(db.engine)
+                cols = [col['name'] for col in inspector.get_columns('location')]
+                if 'area' not in cols:
+                    db.session.execute(
+                        "ALTER TABLE location ADD COLUMN area VARCHAR(20) NOT NULL DEFAULT ''"
+                    )
+                    db.session.commit()
+                    logger.info("Added 'area' column to Location table")
+                # Ensure the 'postcode' column exists in the Location table
+                if 'postcode' not in cols:
+                    db.session.execute(
+                        "ALTER TABLE location ADD COLUMN postcode VARCHAR(20) NOT NULL DEFAULT ''"
+                    )
+                    db.session.commit()
+                    logger.info("Added 'postcode' column to Location table")
                 logger.info("Database tables created successfully")
             except SQLAlchemyError as e:
                 logger.error(f"Error creating database tables: {str(e)}")
@@ -57,7 +78,7 @@ def initialize_database(app):
                         email='admin@example.com',
                         role='admin'
                     )
-                    admin.set_password(os.getenv('ADMIN_PASSWORD', 'admin123'))
+                    admin.set_password(os.getenv('ADMIN_PASSWORD', 'Admin@123'))
                     db.session.add(admin)
                     db.session.commit()
                     logger.info("Initial admin user created successfully")
@@ -65,6 +86,64 @@ def initialize_database(app):
                     logger.error(f"Error creating admin user: {str(e)}")
                     db.session.rollback()
                     raise
+
+            # Seed sample data (for development/testing) if no bowsers exist
+            from models.sql_models import Bowser, Location, Maintenance, Deployment
+            if Bowser.query.count() == 0:
+                logger.info("Seeding sample data into database...")
+                # Sample bowsers
+                bowser1 = Bowser(
+                    id=str(uuid.uuid4()), number='BW001', capacity=5000.0,
+                    current_level=4500.0, status='active', owner='Company A'
+                )
+                bowser2 = Bowser(
+                    id=str(uuid.uuid4()), number='BW002', capacity=3000.0,
+                    current_level=2800.0, status='active', owner='Company B'
+                )
+                db.session.add_all([bowser1, bowser2])
+                # Sample locations
+                location1 = Location(
+                    id=str(uuid.uuid4()),
+                    name='Central Hospital',
+                    postcode='SW1',
+                    area='south',
+                    address='123 Main St',
+                    latitude=51.5074,
+                    longitude=-0.1278,
+                    type='hospital',
+                    status='active'
+                )
+                location2 = Location(
+                    id=str(uuid.uuid4()),
+                    name='North Community Center',
+                    postcode='N1',
+                    area='north',
+                    address='456 Park Ave',
+                    latitude=51.5204,
+                    longitude=-0.1298,
+                    type='community',
+                    status='active'
+                )
+                db.session.add_all([location1, location2])
+                db.session.commit()
+                # Sample deployments
+                deployment1 = Deployment(
+                    id=str(uuid.uuid4()), bowser_id=bowser1.id, location_id=location1.id,
+                    start_date=datetime.utcnow(), end_date=None, status='active', priority='high'
+                )
+                deployment2 = Deployment(
+                    id=str(uuid.uuid4()), bowser_id=bowser2.id, location_id=location2.id,
+                    start_date=datetime.utcnow(), end_date=None, status='active', priority='high'
+                )
+                db.session.add_all([deployment1, deployment2])
+                # Sample maintenance record
+                maintenance = Maintenance(
+                    id=str(uuid.uuid4()), bowser_id=bowser2.id, maintenance_type='routine',
+                    description='Initial check', date=datetime.utcnow(), status='completed'
+                )
+                db.session.add(maintenance)
+                db.session.commit()
+                logger.info("Sample data seeded successfully")
 
     except Exception as e:
         logger.error(f"Database initialization failed: {str(e)}")
@@ -150,6 +229,8 @@ def initialize_database_with_sample_data(app, force_reset=False):
                 location1 = Location(
                     id=str(uuid.uuid4()),
                     name='Central Hospital',
+                    postcode='SW1',
+                    area='south',
                     address='123 Main St',
                     latitude=51.5074,
                     longitude=-0.1278,
@@ -160,6 +241,8 @@ def initialize_database_with_sample_data(app, force_reset=False):
                 location2 = Location(
                     id=str(uuid.uuid4()),
                     name='North Community Center',
+                    postcode='N1',
+                    area='north',
                     address='456 Park Ave',
                     latitude=51.5204,
                     longitude=-0.1298,

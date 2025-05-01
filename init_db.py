@@ -1,24 +1,16 @@
 from flask import Flask
-from database import initialize_database_with_sample_data, db, migrate
+from flask_sqlalchemy import SQLAlchemy
+from config import Config
+from database import initialize_database_with_sample_data, migrate
 import os
 from models.sql_models import User, Location, Bowser, Deployment, Maintenance, Alert
 
 # Initialize Flask app
 app = Flask(__name__)
-
-# Configure database
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///instance/aquaalert.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-# Password policy configuration
-app.config['PASSWORD_MIN_LENGTH'] = 8
-app.config['PASSWORD_REQUIRE_UPPERCASE'] = True
-app.config['PASSWORD_REQUIRE_LOWERCASE'] = True
-app.config['PASSWORD_REQUIRE_NUMBERS'] = True
-app.config['PASSWORD_REQUIRE_SPECIAL'] = True
+app.config.from_object(Config)
 
 # Initialize extensions
-db.init_app(app)
+db = SQLAlchemy(app)
 migrate.init_app(app, db)
 
 if __name__ == "__main__":

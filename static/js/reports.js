@@ -139,8 +139,6 @@ class ReportsManager {
     }
 
     createUtilizationChart() {
-
-    createUtilizationChart() {
         const ctx = document.getElementById('utilizationChart').getContext('2d');
         
         // Calculate utilization data
@@ -180,7 +178,7 @@ class ReportsManager {
                     }
                 }
             }
-        });;
+        });
     }
 
     createDistributionChart() {
@@ -221,7 +219,7 @@ class ReportsManager {
                     }
                 }
             }
-        });;
+        });
     }
 
     createMaintenanceCharts() {
@@ -266,7 +264,7 @@ class ReportsManager {
                     }
                 }
             }
-        });;
+        });
 
         // Response Time Trends chart
         const timeCtx = document.getElementById('responseTimeChart').getContext('2d');
@@ -306,7 +304,7 @@ class ReportsManager {
                     }
                 }
             }
-        });;
+        });
     }
 
     calculateResponseTimeTrends() {
@@ -380,7 +378,7 @@ class ReportsManager {
             <option value="emergency">Emergency</option>
             <option value="residential">Residential</option>
             <option value="commercial">Commercial</option>
-        `;;
+        `;
     }
 
     calculateSupplyLevel(deployments) {
@@ -390,18 +388,18 @@ class ReportsManager {
             return sum + (deployment.supplyLevel || 0);
         }, 0);
         
-        return Math.round(totalLevel / deployments.length);;
+        return Math.round(totalLevel / deployments.length);
     }
 
     calculateRefillRate(deployments) {
         // This would normally calculate based on historical refill data
         // For now, return a mock value between 1-3
-        return ((deployments.length % 3) + 1).toFixed(1);;
+        return ((deployments.length % 3) + 1).toFixed(1);
     }
 
     exportReport(format) {
         // This would normally handle the export functionality
-        this.showNotification(`Report exported as ${format.toUpperCase()}`, 'success');;
+        this.showNotification(`Report exported as ${format.toUpperCase()}`, 'success');
     }
 
     showNotification(message, type = 'info') {

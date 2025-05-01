@@ -4,7 +4,7 @@
  * Supports both module and non-module usage patterns
  */
 
-export class DBHandler {
+class DBHandler {
     constructor() {
         this.baseUrl = '/api';
         this.data = {
@@ -845,25 +845,19 @@ export class DBHandler {
         const deployments = await this.getDeployments();
         return Array.isArray(deployments) ? deployments.filter(d => d.status === 'active') : [];
     }
-}
 
-// Initialize the database handler
-const dbHandler = new DBHandler();
-
-// Support both module (import/export) and non-module (global variable) usage
-try {
-    if (typeof module !== 'undefined' && module.exports) {
-        // Node.js/CommonJS export
-        module.exports = dbHandler;
-    } else if (typeof define === 'function' && define.amd) {
-        // AMD/RequireJS export
-        define([], function() { return dbHandler; });
-    } else if (typeof window !== 'undefined') {
-        // Browser global variable
-        window.dbHandler = dbHandler;
+    // Alias for get bowser by ID
+    getBowserById(id) {
+        return (this.data.bowsers || []).find(b => b.id === id);
     }
-} catch (e) {
-    console.log('Module export not supported in this environment');
 }
 
-// dbHandler is already available as a global variable
+// Expose globally
+window.DBHandler = DBHandler;
+// Alias for backward compatibility
+window.DatabaseHandler = DBHandler;
+
+// Alias old loadData API to new initializeData
+DBHandler.prototype.loadData = DBHandler.prototype.initializeData;
+// Alias synchronous maintenance record getter
+DBHandler.prototype.getMaintenanceRecords = function() { return this.data.maintenance; };

@@ -589,374 +589,129 @@ Summary of Recent Changes:
 
 Note: [additional notes or considerations]
 
-[2024-03-21 15:30:00] - Dashboard Data Population Issue
-Location: static/js/data.js, static/js/dashboard.js
-Issue: Dashboard statistics not being populated (all counts showing as zero)
-Solution: Enhanced DataManager class with proper data initialization and error handling
-Changes Made:
-- Added data property to store arrays for all entities
-- Implemented initializeData method with Promise.all for concurrent loading
-- Added proper error handling and logging for each data fetch
-- Improved error recovery with empty array fallbacks
-Status: Fixed
+# Client-side resource errors
+Failed to load resource: /static/img/favicon.png (404 NOT FOUND)
+Failed to load resource: /api/users (401 UNAUTHORIZED)
 
-[2024-03-21 15:45:00] - User Model Serialization
-Location: models/sql_models.py
-Issue: 500 error on /api/users endpoint due to missing to_dict() method
-Solution: Added to_dict() method to User model for proper data serialization
-Changes Made:
-- Implemented to_dict() method in User class
-- Added proper datetime field handling with ISO format conversion
-- Included all relevant user fields while excluding sensitive data
-- Added null value handling for optional fields
-Status: Fixed
+# Server-side errors during app startup
+NameError: name 'W' is not defined in app.py (unexpected character in code)
+ValueError: Password must contain at least one uppercase letter (database.py)
+ValueError: Password must contain at least one special character (database.py)
 
-[2024-03-21 16:00:00] - Dashboard Layout and Map Issues
-Location: templates/dashboard.html, static/css/dashboard.css, static/js/dashboard.js
-Issue: Map not loading and layout inconsistencies
-Solution: Standardized map container ID and improved layout structure
-Changes Made:
-- Updated map container ID to be consistent across files
-- Added proper CSS styles for map and list containers
-- Improved card layout and responsiveness
-- Enhanced view toggle functionality
-- Added mobile device optimizations
-Status: Fixed
+# CSRF protection errors
+Bad Request: The CSRF token is missing. (login route)
 
-Summary of Recent Changes:
-1. Improved data initialization and error handling in DataManager
-2. Fixed user data serialization for API responses
-3. Enhanced dashboard layout and map functionality
-4. Added proper error logging and recovery mechanisms
-5. Improved mobile responsiveness and user experience
+# Summary
+These errors indicate missing static assets, unauthorized API endpoint access, initial coding typos, insufficient password complexity rules, and missing CSRF tokens in forms.
+Please address each issue as above to ensure the app runs smoothly.
 
-[2024-03-21 15:30:00] ERROR: Dashboard Initialization Error
-Location: static/js/dashboard.js
-Description: TypeError: deployments.forEach is not a function
-Solution: Fixed error handling in Dashboard and DBHandler classes to handle undefined values
-Changes made:
-- Updated DBHandler to return empty arrays for undefined API responses
-- Added proper error handling in Dashboard initialization
-- Fixed map marker updates to check for Array.isArray(deployments)
-- Improved error notifications and logging
-- Set default map view to Johannesburg coordinates [-26.2041, 28.0473]
-
-[2024-03-21 15:30:00] ERROR: API Endpoint Errors
-Location: Multiple API endpoints
-Description: 404 and 500 errors on API endpoints
-Solution: Improved error handling in DBHandler class
-Changes made:
-- Added fallback to empty arrays for all API responses
-- Implemented proper error handling for API calls
-- Added data validation before processing responses
-- Improved error logging for API failures
-
-[2024-03-21 15:30:00] ERROR: Map Container Issues
-Location: static/js/dashboard.js
-Description: Map markers not displaying correctly
-Solution: Fixed map marker initialization and updates
-Changes made:
-- Improved marker clearing logic
-- Added proper error handling for marker creation
-- Updated marker styling and popup content
-- Fixed coordinate handling for locations
-
-[2024-03-21 15:30:00] Module Import and DataManager Reference Fixes
-- Fixed module import errors in dashboard.js and management.js
-- Updated script tags to use type="module" for ES6 module support
-- Fixed DataManager reference issues in management.js
-- Implemented proper class instance management
+[2024-03-21 16:00:00] Map Implementation Switch from Google Maps to Leaflet
+Location: Multiple files (locations.html, locations.js)
+Change: Switched from Google Maps to Leaflet for map implementation
+Reason: To use an open-source solution without API key requirements
 
 Changes made:
-1. Updated script tags in dashboard.html:
-   - Added type="module" to data.js, dashboard.js, and management.js
-   - Ensured proper module loading order
+1. Updated templates/locations.html:
+   - Removed Google Maps scripts and API key references
+   - Added Leaflet CSS and JavaScript from CDN with integrity checks
+   - Added name attributes to form fields for proper FormData handling
+   - Updated form structure for better data handling
 
-2. Updated management.js:
-   - Added proper import for DataManager from data.js
-   - Created DataManager instance in constructor
-   - Updated all dataManager references to use this.dataManager
-   - Made all data operations async/await
-   - Removed global dataManager references
+2. Updated static/js/locations.js:
+   - Replaced Google Maps implementation with Leaflet
+   - Added dark theme tile layer from CARTO for better UI
+   - Updated marker handling to use Leaflet's L.marker
+   - Updated popup handling to use Leaflet's L.popup
+   - Changed coordinate handling to match Leaflet's [lat, lng] format
+   - Updated map events and methods to use Leaflet equivalents
+   - Added click-to-add-location functionality on the map
+   - Improved error handling for map operations
+   - Added proper cleanup for markers and event listeners
+   - Updated fullscreen functionality to work with Leaflet
 
-3. Fixed initialization sequence:
-   - Properly initialized DataManager in constructor
-   - Added proper error handling for async operations
-   - Ensured data is loaded before UI updates
+3. Map Features Added/Updated:
+   - Dark theme map tiles from CARTO
+   - Custom zoom control position (bottom right)
+   - Responsive map handling
+   - Better popup handling with custom styling
+   - More efficient marker management
+   - Improved map interaction feedback
+   - Better fullscreen support with proper map resize handling
 
-Note: The application now properly uses ES6 modules and has correct DataManager instance management. All data operations are properly scoped and asynchronous, with appropriate error handling.
+4. Error Handling Improvements:
+   - Added try-catch blocks for map initialization
+   - Added error handling for marker operations
+   - Added error handling for coordinate validation
+   - Added user feedback for map interaction errors
+   - Improved error messages for failed operations
 
-[2024-03-21 15:30:00] Dashboard Button Functionality Error
-Location: static/js/dashboard.js
-Error: Dashboard buttons not responding to user interactions
-Solution: Added event listeners and handlers for all dashboard buttons
+Note: The application now uses Leaflet for all map functionality, providing a more lightweight and open-source solution. The map implementation includes proper error handling, better user feedback, and improved performance. The dark theme and custom styling provide a better user experience while maintaining all required functionality. 
+
+[2024-03-21 19:15:00] ERROR: Duplicate Database Issue
+Location: Project root directory
+Description: Multiple database files detected in the project
+Solution: Consolidate databases and ensure single source of truth
 Changes made:
-- Added setupEventListeners() method to initialize button event listeners
-- Implemented handleRefresh() for the refresh dashboard button
-- Implemented handleViewAllActivity() for the view all activity button
-- Implemented handleViewAllAlerts() for the view all alerts button
-- Implemented handleViewToggle() for map/list view toggle buttons
-- Added proper error handling and user feedback for all button actions
-- Ensured proper state management for view toggle buttons
-- Added map size refresh when switching to map view
+- Identified duplicate database files:
+  1. Main application database
+  2. Secondary/duplicate database from previous implementation
+- Consolidated all data into single database file
+- Updated all database references to use single connection
+- Removed redundant database files
+- Updated connection strings in all relevant files
+- Verified data integrity after consolidation
+- Added database location documentation
 
-Summary of recent changes:
-- Fixed dashboard button functionality
-- Added proper event handling for all user interactions
-- Improved user feedback with notifications
-- Enhanced view toggle functionality
-- Added error handling for all button actions
+Steps to prevent future duplication:
+1. Centralized database configuration in config.py
+2. Added clear documentation about database location
+3. Updated all database access to use configuration
+4. Added checks to prevent creation of multiple database instances
+5. Added warning logs if duplicate database connections are attempted
 
-Note: The dashboard now has fully functional buttons with proper error handling and user feedback. All user interactions are properly managed and the view toggle functionality works smoothly between map and list views.
+Note: The application now uses a single database file as the source of truth. All database operations are properly centralized and documented to prevent future duplication issues. 
 
-[2024-03-21 16:00:00] DBHandler Implementation Errors
-Location: static/js/db-handler.js
-Error: Missing methods and data loading issues in DBHandler
-Solution: Fixed DBHandler implementation and data loading
+[2024-03-22 11:15:00] Recent Enhancements and Module Updates
+- Added favicon and enhanced CSS in base.html (templates/base.html)
+- Created modern CSS file static/css/aquaalert.css for application-wide styling
+- Updated static/css/locations.css with new layout grid and fullscreen map functionality
+- Consolidated database configuration in config.py into a single source of truth and fixed related linter errors
+- Refactored JavaScript modules (data.js, public.js) for ES6 imports/exports and removed demo/sample data
+- Updated public_map route in app.py to include deployments and alerts and pass initial_data to the frontend
+- Updated templates/public.html to embed initial_data and load scripts as ES6 modules 
+
+[2024-03-22 12:00:00] DataManager Method Errors in Dashboard
+- Error: TypeError: this.dataManager.getMaintenanceDue is not a function
+  Location: static/js/dashboard.js, line 281 (updateStats)
+  Solution: Added getMaintenanceDue() to DataManager in data.js to return maintenance due items.
+
+- Error: TypeError: this.dataManager.getUsers is not a function
+  Location: static/js/dashboard.js, line 300 (updateTables)
+  Solution: Added getUsers() to DataManager in data.js to return user data.
+
+[2024-03-22 12:05:00] Accessibility Warning: Missing Autocomplete Attribute
+- Warning: Input elements should have autocomplete attributes (suggested: "current-password")
+  Location: templates/dashboard.html (password input field id="password")
+  Solution: Added autocomplete="current-password" to the password input element. 
+
+[2024-03-22 13:30:00] LAYOUT: Panel Sizing and Layout Fixes
+Location: static/css/dashboard.css, templates/base.html, templates/dashboard.html
+Description: Corrected layout issues by removing hard-coded offsets, adding Bootstrap CSS, and ensuring equal panel heights.
+Solution:
+- Removed manual `margin-left` on `#main-content` in `static/css/dashboard.css`.
+- Added Bootstrap 5 CSS CDN link in `templates/base.html` before custom styles.
+- Added `align-items-stretch` class to management panels row in `templates/dashboard.html`.
 Changes made:
-- Added initializeData() method to load all data in parallel
-- Added getUsers() method for user data retrieval
-- Added getActiveDeployments() method for active deployments
-- Added users and alerts to data structure
-- Improved error handling and fallback to local cache
-- Added proper data loading state management
-- Fixed async/await usage in all methods
-- Added proper error messages for database not loaded state
+- static/css/dashboard.css: removed `margin-left` from `#main-content`.
+- templates/base.html: inserted `<link>` to Bootstrap CSS after Font Awesome include.
+- templates/dashboard.html: updated `<div class="row g-4 mb-4">` to `<div class="row g-4 mb-4 align-items-stretch">`. 
 
-Summary of recent changes:
-- Fixed database initialization sequence
-- Added missing API endpoints
-- Improved error handling
-- Added proper data caching
-- Fixed async data loading
-- Added proper state management
-
-Note: The DBHandler now properly initializes and loads all required data, with proper error handling and fallback mechanisms. All required methods are implemented and properly handle the database not loaded state.
-
-[2024-03-21 16:15:00] Data Initialization Errors
-Location: static/js/db-handler.js and static/js/data.js
-Error: Database not loaded errors and initialization sequence issues
-Solution: Fixed data initialization and loading sequence
-Changes made:
-- Removed automatic initialization from DBHandler constructor
-- Added separate load methods for each data type
-- Improved error handling in data loading
-- Fixed async/await usage in all methods
-- Simplified DataManager class to use DBHandler directly
-- Added proper error handling for database not loaded state
-- Fixed initialization sequence in Dashboard and Management classes
-- Added proper data refresh mechanism
-
-Summary of recent changes:
-- Fixed database initialization sequence
-- Improved error handling
-- Added proper data loading methods
-- Fixed async data loading
-- Added proper state management
-- Simplified data access patterns
-
-Note: The data initialization now works properly with proper error handling and state management. The DBHandler and DataManager classes work together to ensure data is loaded correctly before being accessed.
-
-[2024-03-21 16:30:00] ERROR: API Endpoint Issues
-Location: routes/api_routes.py
-Description: Missing alerts endpoint and users endpoint errors
-Solution: Added and fixed API endpoints
-Changes made:
-- Added /api/alerts endpoint with proper error handling
-- Fixed /api/users endpoint to properly return user data
-- Added proper error handling for both endpoints
-- Ensured proper authentication requirements
-- Added proper data serialization
-
-[2024-03-21 16:30:00] ERROR: Password Input Accessibility
-Location: templates/auth/login.html
-Description: Missing autocomplete attribute on password input
-Solution: Added autocomplete attribute
-Changes made:
-- Added autocomplete="current-password" to password input
-- Improved form accessibility
-- Ensured proper HTML5 validation
-
-[2024-03-21 16:45:00] ERROR: API Decorator Error
-Location: routes/api_routes.py
-Description: NameError: name 'staff_required' is not defined
-Solution: Added proper API decorators and fixed alerts endpoint
-Changes made:
-- Added api_staff_required decorator for staff role access
-- Added api_login_required decorator for general authentication
-- Added api_admin_required decorator for admin role access
-- Updated alerts endpoint to use api_staff_required decorator
-- Ensured proper role-based access control
-
-[2024-03-21 17:00:00] ERROR: API Endpoint Path Issues
-Location: routes/api_routes.py
-Description: Incorrect API endpoint paths causing 404 errors
-Solution: Fixed API endpoint paths
-Changes made:
-- Changed /api/users to /users
-- Changed /api/alerts to /alerts
-- Ensured proper route registration with api_blueprint
-- Fixed endpoint paths in DBHandler
-
-[2024-03-21 17:00:00] ERROR: Management Panel Functionality
-Location: static/js/management.js
-Description: Database editing buttons not working
-Solution: Implemented management panel functionality
-Changes made:
-- Added event listeners for all management buttons
-- Implemented CRUD operations for locations, bowsers, and users
-- Added proper error handling and user feedback
-- Implemented modal handling for add/edit operations
-- Added table update functionality
-- Added status badge styling
-- Added notification system
-
-[2024-03-21 10:30:00] Password Input Accessibility Warning
-- Issue: Password input field missing proper autocomplete attribute
-- Location: templates/auth/login.html
-- Solution: Added autocomplete="current-password" to password input field
-- Changes made: Updated password input field to improve accessibility and browser compatibility
-
-[2024-03-21 10:35:00] API Endpoint Error
-- Issue: 500 Internal Server Error on /api/users endpoint
-- Location: routes/api_routes.py
-- Solution: Improved error handling in users API endpoint
-- Changes made: 
-  - Added proper exception handling
-  - Added error logging
-  - Standardized error response format
-  - Improved user data serialization
-
-[2024-03-21 17:15:00] API Users Endpoint Error
-- Issue: 500 Internal Server Error on /api/users endpoint
-- Location: routes/api_routes.py
-- Solution: Improved error handling and logging in users API endpoint
-- Changes made:
-  - Added detailed logging for successful and failed operations
-  - Added handling for empty user list
-  - Improved error response with detailed message
-  - Added stack trace logging for errors
-  - Added proper status codes for different scenarios
-
-Summary of Recent Changes:
-- Improved password input accessibility
-- Enhanced API error handling and logging
-- Standardized error responses
-- Added proper user data serialization
-- Enhanced API error handling and logging
-- Improved error response format
-- Added proper status code handling
-- Added detailed logging for debugging
-
-12. Database Initialization Error: Missing last_login Column
-    Error: sqlite3.OperationalError: table user has no column named last_login
-    Location: database.py, line 239
-    Solution: Fixed database schema to include all required user fields
-    Changes made:
-    - Updated User model in sql_models.py to include last_login field
-    - Recreated database with proper schema
-    - Ensured all migrations are up to date
-    - Added proper error handling for database initialization
-
-13. Database Migration Error: Table Already Exists
-    Error: sqlite3.OperationalError: table user already exists
-    Location: migrations/versions/10b03aa3a8b8_add_user_model_and_roles.py
-    Solution: Implemented proper database cleanup before initialization
-    Changes made:
-    - Added code to remove existing database file
-    - Created proper database directory structure
-    - Ensured clean slate for database initialization
-    - Added proper error handling for file operations
-
-14. Database Initialization Success
-    Location: init_db.py
-    Solution: Successfully initialized database with sample data
-    Changes made:
-    - Properly imported all required models
-    - Implemented proper database cleanup
-    - Created all tables with correct schema
-    - Initialized with sample data including:
-      - Users (admin_test, staff_test, testuser)
-      - Bowsers (BW001, BW002)
-      - Locations (Central Hospital, North Community Center)
-      - Maintenance records and deployments
-
-[2024-03-21 17:30:00] ERROR: API Endpoint Path Issues
-Location: routes/api_routes.py
-Description: Incorrect API endpoint paths causing 404 errors
-Solution: Fixed API endpoint paths
-Changes made:
-- Changed /api/users to /users
-- Changed /api/alerts to /alerts
-- Ensured proper route registration with api_blueprint
-- Fixed endpoint paths in DBHandler
-
-[2024-03-21 17:45:00] ERROR: Data Loading Issues
-Location: static/js/db-handler.js and static/js/data.js
-Description: Multiple data loading issues and API errors
-Solution: Fixed data loading and API handling
-Changes made:
-- Fixed API endpoint paths in DBHandler
-- Added proper error handling for API responses
-- Improved data initialization sequence
-- Added fallback for failed API calls
-- Fixed data refresh mechanism
-
-[2024-03-21 18:00:00] ERROR: Users API Endpoint
-Location: routes/api_routes.py
-Description: 500 Internal Server Error on /api/users endpoint
-Solution: Fixed users API endpoint
-Changes made:
-- Added proper error handling for database queries
-- Improved user data serialization
-- Added proper logging for errors
-- Fixed response format
-- Added proper status codes
-
-[2024-03-21 18:15:00] ERROR: Data Initialization Sequence
-Location: static/js/db-handler.js
-Description: Data initialization issues and undefined values
-Solution: Fixed data initialization sequence
-Changes made:
-- Added proper error handling for each data type
-- Improved data loading sequence
-- Added proper state management
-- Fixed undefined value handling
-- Added proper error messages
-
-[2024-03-21 18:30:00] ERROR: Dashboard Data Updates
-Location: static/js/dashboard.js
-Description: Dashboard not updating properly with new data
-Solution: Fixed dashboard update mechanism
-Changes made:
-- Improved data refresh handling
-- Added proper error handling for updates
-- Fixed table update mechanism
-- Added proper state management
-- Improved error notifications
-
-Summary of Recent Changes:
-1. Fixed API endpoint paths to match Flask routes
-2. Improved error handling in API endpoints
-3. Fixed data loading sequence in DBHandler
-4. Added proper error handling for failed API calls
-5. Improved user data serialization
-6. Fixed dashboard update mechanism
-7. Added proper state management
-8. Improved error notifications
-9. Fixed undefined value handling
-10. Added proper logging for errors
-
-Note: The application now properly handles API errors and data loading issues. The dashboard updates correctly with new data, and proper error handling is in place for all API calls. The data initialization sequence has been improved to handle undefined values and failed API calls gracefully.
-
-[2024-03-21 19:00:00] ERROR: New Error Entry
-Location: [specific file or location]
-Description: [brief description of the error]
-Solution: [proposed solution]
-Changes made:
-- [specific changes made]
-
-Summary of Recent Changes:
-- [brief summary of the changes]
-
-Note: [additional notes or considerations] 
+mock-data.js:8 DataManager not initialized. Creating placeholder.
+(anonymous) @ mock-data.js:8
+mock-data.js:79 Mock locations data loaded
+data.js:118 Uncaught SyntaxError: Unexpected token 'export'
+reports.js:143 Uncaught SyntaxError: Unexpected token '{'
+content.js:1 Deprecated API for given entry type.
+value @ content.js:1
+writing_mode_assistant.js:2 Mounting Writing Mode event listeners
+writing_mode_assistant.js:2 Writing Mode event listeners mounted in the reports tabs 

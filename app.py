@@ -12,64 +12,62 @@ import os
 from dotenv import load_dotenv
 from utils.json_handler import JsonHandler
 from routes.api_routes import api_blueprint
-from models.sql_models import User, Bowser, Location, Maintenance, Deployment, Invoice, Partner
-from database import initialize_database_with_sample_data
+from models.sql_models import User, Bowser, Location, Maintenance, Deployment, Invoice, Partner, Alert
+from database import initialize_database, initialize_database_with_sample_data
 from routes.protected_routes import protected_blueprint
 from config import Config
 from flask_wtf.csrf import CSRFProtect
+from config import config
+from database import db, migrate, init_db
 
-# Initialize Flask app
-app = Flask(__name__)
-app.config.from_object(Config)
+# Load environment variables
+load_dotenv()
 
-# Initialize CSRF protection
-csrf = CSRFProtect(app)
-
-# Initialize JSON handler
-json_handler = JsonHandler('data/test_db.json' if app.config['TESTING'] else 'data/db.json')
-
-# Database configuration
-if app.config['TESTING']:
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
-else:
-    # Use instance folder for database
-    instance_path = os.path.join(app.instance_path, 'aquaalert.db')
-    os.makedirs(app.instance_path, exist_ok=True)
-    app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{instance_path}'
-
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-# Initialize SQLAlchemy
-db = SQLAlchemy(app)
-migrate = Migrate(app, db)
-
-# Initialize Flask-Login
+# Initialize extensions
 login_manager = LoginManager()
-login_manager.init_app(app)
-login_manager.login_view = 'login'
-login_manager.login_message = "Please log in to access this page."
-login_manager.login_message_category = 'info'
+csrf = CSRFProtect()
 
-load_dotenv()  # Load environment variables from .env file
-
-# Register blueprints
-app.register_blueprint(api_blueprint, url_prefix='/api')
-app.register_blueprint(protected_blueprint, url_prefix='/protected')
-
-# Initialize database with sample data
-with app.app_context():
-    try:
-        # Create all tables
-        db.create_all()
-        print("Database tables created successfully")
-    except Exception as e:
-        print(f"Error creating database tables: {str(e)}")
-        raise
-
-# Flask-Login User Loader Callback
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
+
+def create_app(config_name='development'):
+    app = Flask(__name__)
+    
+    # Load configuration
+    app.config.from_object(config[config_name])
+    config[config_name].init_app(app)
+    
+    # Initialize extensions
+    init_db(app)
+    csrf.init_app(app)
+    
+    # Initialize Flask-Login
+    login_manager.init_app(app)
+    login_manager.login_view = 'login'
+    login_manager.login_message = "Please log in to access this page."
+    login_manager.login_message_category = 'info'
+    
+    # Initialize JSON handler
+    json_handler = JsonHandler('data/test_db.json' if app.config['TESTING'] else 'data/db.json')
+    
+    # Import routes after app creation to avoid circular imports
+    from routes.api_routes import api_blueprint
+    from routes.protected_routes import protected_blueprint
+    
+    # Register blueprints
+    app.register_blueprint(api_blueprint, url_prefix='/api')
+    app.register_blueprint(protected_blueprint, url_prefix='/protected')
+    
+    return app
+
+# Create the application instance
+app = create_app('development')
+
+# Initialize the database (using instance/aquaalert.db) and ensure tables and admin user
+initialize_database(app)
+# In development, reseed sample data (including Bloomsbury deployment)
+initialize_database_with_sample_data(app, force_reset=True)
 
 # --- Access Control Decorators ---
 
@@ -110,6 +108,7 @@ def staff_required(f):
 # --- Routes ---
 
 # --- Authentication Routes ---
+@csrf.exempt
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
@@ -141,10 +140,21 @@ def login():
             
         user = User.query.filter_by(username=username).first()
         if user and user.check_password(password):
+            # Clear any existing session data
             session.clear()
-            login_user(user)
+            
+            # Set up the new session
             session.permanent = True
             session.modified = True
+            
+            # Log in the user
+            login_user(user, remember=True)
+            
+            # Store user data in session
+            session['user_id'] = user.id
+            session['username'] = user.username
+            session['role'] = user.role
+            session['_fresh'] = True
             
             if request.is_json:
                 return jsonify({
@@ -239,7 +249,23 @@ def public_map():
     """Public view of bowser locations and status"""
     bowsers = Bowser.query.all()
     locations = Location.query.all()
-    return render_template('public.html', bowsers=bowsers, locations=locations)
+    deployments = Deployment.query.filter(Deployment.status.in_(['active', 'scheduled'])).all()
+    alerts = Alert.query.filter_by(priority='high').order_by(Alert.created_at.desc()).all()
+    
+    # Convert data to dictionaries for JSON serialization
+    data = {
+        'bowsers': [bowser.to_dict() for bowser in bowsers],
+        'locations': [location.to_dict() for location in locations],
+        'deployments': [deployment.to_dict() for deployment in deployments],
+        'alerts': [alert.to_dict() for alert in alerts]
+    }
+    
+    return render_template('public.html', 
+                         bowsers=bowsers,
+                         locations=locations,
+                         deployments=deployments,
+                         alerts=alerts,
+                         initial_data=data)
 
 # --- Staff Routes ---
 @app.route('/management')
@@ -301,14 +327,15 @@ def admin_users():
 def finance():
     """Finance management page."""
     invoices = Invoice.query.order_by(Invoice.issue_date.desc()).all()
-    return render_template('finance/index.html', invoices=invoices)
+    partners = Partner.query.order_by(Partner.name).all()
+    return render_template('finance.html', invoices=invoices, partners=partners)
 
 @app.route('/finance/invoices')
 @admin_required
 def manage_invoices():
     """Invoice management page."""
     invoices = Invoice.query.order_by(Invoice.issue_date.desc()).all()
-    return render_template('finance/invoices.html', invoices=invoices)
+    return render_template('manage_invoices.html', invoices=invoices)
 
 @app.route('/finance/invoices/create', methods=['GET', 'POST'])
 @admin_required
@@ -484,6 +511,27 @@ def api_deployments():
     deployments = Deployment.query.all()
     return jsonify([deployment.to_dict() for deployment in deployments])
 
+@app.route('/api/invoices')
+@login_required
+def api_invoices():
+    """Return all invoices for the finance dashboard."""
+    invoices = Invoice.query.order_by(Invoice.issue_date.desc()).all()
+    return jsonify([invoice.to_dict() for invoice in invoices])
+
+@app.route('/api/partners')
+@login_required
+def api_partners():
+    """Return all partner companies for mutual aid."""
+    partners = Partner.query.order_by(Partner.name).all()
+    return jsonify([partner.to_dict() for partner in partners])
+
+@app.route('/api/mutual-aid/transactions')
+@login_required
+def api_mutual_aid_transactions():
+    """Return mutual aid transactions (currently empty, placeholder)."""
+    # TODO: replace with real transactions model when available
+    return jsonify([])
+
 # --- Staff & Admin Routes ---
 
 # === Test Dashboard Routes ===
@@ -642,17 +690,6 @@ def clear_all_sessions():
         session.pop(key)
     print("All sessions cleared at startup")
 
-# Force clear sessions on index page load
-@app.before_request
-def clear_sessions_on_first_request():
-    # Only run on the first request after server restart
-    if not hasattr(app, '_session_cleared'):
-        clear_all_sessions()
-        app._session_cleared = True
-        if current_user.is_authenticated:
-            logout_user()
-            print("Automatically logged out all users on server start")
-
 @app.route('/admin/users/create', methods=['POST'])
 @admin_required
 def create_user():
@@ -767,5 +804,12 @@ def create_maintenance():
             flash(f'Error creating maintenance record: {str(e)}', 'error')
     return render_template('maintenance/create.html')
 
+# Inject current year into templates for dynamic footer
+@app.context_processor
+def inject_current_year():
+    return {'current_year': datetime.now().year}
+
 if __name__ == '__main__':
+    # Seed database with sample data on startup
+    initialize_database_with_sample_data(app, force_reset=True)
     app.run(debug=True)

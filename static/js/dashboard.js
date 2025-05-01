@@ -18,7 +18,10 @@ export class Dashboard {
             console.log('Initializing dashboard...');
             await this.dataManager.initializeData();
             
-            // Populate deployments table instead of map
+            // Initialize dashboard map
+            await this.initializeMap();
+            
+            // Populate deployments table after map init
             await this.updateDeploymentsTable();
             
             this.initializePerformanceChart();
@@ -87,8 +90,8 @@ export class Dashboard {
             // Add markers for active deployments
             if (Array.isArray(deployments)) {
                 deployments.forEach(deployment => {
-                    const location = locations.find(l => l.id === deployment.locationId);
-                    const bowser = bowsers.find(b => b.id === deployment.bowserId);
+                    const location = locations.find(l => l.id === deployment.location_id);
+                    const bowser = bowsers.find(b => b.id === deployment.bowser_id);
                     
                     if (location && bowser) {
                         // Handle different coordinate formats
@@ -109,9 +112,9 @@ export class Dashboard {
                                 <div class="marker-popup">
                                     <h3>${location.name}</h3>
                                     <p><i class="fas fa-truck"></i> Bowser: ${bowser.number}</p>
-                                    <p><i class="fas fa-tint"></i> Supply Level: ${deployment.supplyLevel}%</p>
+                                    <p><i class="fas fa-tint"></i> Supply Level: ${bowser.current_level}%</p>
                                     <p><i class="fas fa-map-marker-alt"></i> ${location.address}</p>
-                                    <p><i class="fas fa-envelope"></i> Postcode: ${this.extractPostcode(location.address) || 'N/A'}</p>
+                                    <p><i class="fas fa-envelope"></i> Postcode: ${location.postcode || this.extractPostcode(location.address) || 'N/A'}</p>
                                 </div>
                             `);
                         

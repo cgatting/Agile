@@ -9,6 +9,12 @@
 
 
 {% block content %}
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h1 class="h4 mb-0">Emergency Water Locations</h1>
+            <button id="refreshMap" class="btn btn-outline-light btn-sm">
+                <i class="fas fa-sync-alt me-1"></i> Refresh Map
+            </button>
+        </div>
         <!-- Emergency Banner -->
         <div class="alert alert-danger alert-dismissible fade show mb-0" id="emergencyBanner" role="alert">
             <div class="container-fluid d-flex align-items-center">
@@ -166,6 +172,12 @@
 <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
 <script src="{{ url_for('static', filename='js/config.js') }}"></script>
 <script src="{{ url_for('static', filename='js/utils.js') }}"></script>
-<script src="{{ url_for('static', filename='js/data.js') }}"></script>
-<script src="{{ url_for('static', filename='js/public.js') }}"></script>
+
+<!-- Pass initial data to JavaScript -->
+<script type="text/javascript">
+    window.INITIAL_DATA = {{ initial_data | tojson | safe }};
+</script>
+
+<!-- Load the public interface logic as module -->
+<script type="module" src="{{ url_for('static', filename='js/public.js') }}"></script>
 {% endblock %}

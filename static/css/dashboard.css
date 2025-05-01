@@ -1,8 +1,11 @@
 /* Dashboard Page Styles */
 .dashboard-container {
-    padding: var(--spacing-md);
+    padding: var(--space-4);
     max-width: 1400px;
     margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
 }
 
 /* Map Container */
@@ -24,7 +27,7 @@
 .list-container {
     height: 500px;
     overflow-y: auto;
-    padding: var(--spacing-md);
+    padding: var(--space-4);
 }
 
 /* Card Styles */
@@ -42,25 +45,25 @@
 }
 
 .card-body {
-    padding: var(--spacing-lg);
+    padding: var(--space-5);
 }
 
 .card-header {
-    background-color: var(--neutral-100);
-    border-bottom: 1px solid var(--neutral-200);
-    padding: var(--spacing-md);
+    background-color: var(--gray-100);
+    border-bottom: 1px solid var(--gray-200);
+    padding: var(--space-4);
 }
 
 .card-title {
     font-size: 1rem;
-    color: var(--neutral-600);
+    color: var(--gray-600);
     margin-bottom: var(--spacing-sm);
 }
 
 .display-6 {
     font-size: 2rem;
     font-weight: 700;
-    color: var(--neutral-800);
+    color: var(--gray-800);
 }
 
 /* Activity Feed */
@@ -70,7 +73,7 @@
 }
 
 .activity-item {
-    padding: var(--spacing-md);
+    padding: var(--space-4);
     border-bottom: 1px solid var(--neutral-200);
 }
 
@@ -80,7 +83,7 @@
 
 .activity-time {
     font-size: 0.875rem;
-    color: var(--neutral-500);
+    color: var(--gray-500);
 }
 
 /* Maintenance Table */
@@ -95,8 +98,8 @@
 
 .table th {
     font-weight: 600;
-    color: var(--neutral-600);
-    background-color: var(--neutral-100);
+    color: var(--gray-600);
+    background-color: var(--gray-100);
 }
 
 .table td {
@@ -147,7 +150,7 @@
 /* Responsive Design */
 @media screen and (max-width: 768px) {
     .dashboard-container {
-        padding: var(--spacing-sm);
+        padding: var(--space-2);
     }
 
     .map-container {
@@ -159,7 +162,7 @@
     }
 
     .card-body {
-        padding: var(--spacing-md);
+        padding: var(--space-4);
     }
 }
 
@@ -168,5 +171,50 @@
     .card:hover {
         transform: none;
         box-shadow: var(--shadow-sm);
+    }
+}
+
+/* Sidebar Layout */
+#sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 16.6667%; /* 2 of 12 columns */
+    background-color: var(--gray-50);
+    border-right: 1px solid var(--gray-200);
+    padding-top: var(--space-5);
+    overflow-y: auto;
+    z-index: 100;
+}
+
+#sidebar .nav-link {
+    color: var(--gray-700);
+    padding: var(--space-3) var(--space-4);
+    transition: all var(--transition-fast);
+}
+
+#sidebar .nav-link:hover,
+#sidebar .nav-link.active {
+    color: var(--primary);
+    background-color: var(--primary-light);
+    border-radius: var(--radius-md);
+}
+
+/* Main Content Adjustment */
+#main-content {
+    padding-top: var(--space-4);
+    padding-bottom: var(--space-5);
+}
+
+@media screen and (max-width: 767px) {
+    #sidebar {
+        position: relative;
+        width: 100%;
+        height: auto;
+        border-right: none;
+    }
+    #main-content {
+        margin-left: 0;
     }
 } 

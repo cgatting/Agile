@@ -108,7 +108,6 @@ def before_request():
 
 # Bowser routes
 @api_blueprint.route('/bowsers', methods=['GET'])
-@api_login_required
 @handle_api_error
 def get_bowsers():
     """Get all bowsers."""
@@ -155,7 +154,6 @@ def create_bowser():
 
 # Location routes
 @api_blueprint.route('/locations', methods=['GET'])
-@api_login_required
 @handle_api_error
 def get_locations():
     """Get all locations."""
@@ -200,7 +198,6 @@ def create_location():
 
 # Deployment routes
 @api_blueprint.route('/deployments', methods=['GET'])
-@api_login_required
 @handle_api_error
 def get_deployments():
     """Get all deployments."""
@@ -242,7 +239,6 @@ def create_deployment():
 
 # Maintenance routes
 @api_blueprint.route('/maintenance', methods=['GET'])
-@api_login_required
 @handle_api_error
 def get_maintenance():
     """Get all maintenance records."""
@@ -255,6 +251,14 @@ def get_maintenance():
     except Exception as e:
         return error_response(f"Error retrieving maintenance records: {str(e)}")
 
+@api_blueprint.route('/maintenance/<string:record_id>', methods=['GET'])
+@api_login_required
+@handle_api_error
+def get_maintenance_record(record_id):
+    """Get a single maintenance record by ID."""
+    record = Maintenance.query.get_or_404(record_id)
+    return jsonify(record.to_dict()), 200
+
 @api_blueprint.route('/maintenance', methods=['POST'])
 @api_login_required
 @handle_malformed_json
@@ -262,15 +266,19 @@ def create_maintenance():
     """Create a new maintenance record."""
     try:
         data = request.get_json()
-        if not all(field in data for field in ['bowser_id', 'maintenance_type', 'description', 'date', 'status']):
+        required = ['bowser_id', 'maintenance_type', 'description', 'date', 'status']
+        if not all(field in data for field in required):
             return error_response('Missing required fields')
             
+        # Build new maintenance record including optional priority and assigned_to
         maintenance = Maintenance(
             bowser_id=data['bowser_id'],
             maintenance_type=data['maintenance_type'],
             description=data['description'],
             date=datetime.strptime(data['date'], '%Y-%m-%d'),
-            status=data['status']
+            status=data['status'],
+            priority=data.get('priority', 'medium'),
+            assigned_to=data.get('assigned_to')
         )
         db.session.add(maintenance)
         db.session.commit()
@@ -281,6 +289,34 @@ def create_maintenance():
     except Exception as e:
         db.session.rollback()
         return error_response(f"Error creating maintenance record: {str(e)}")
+
+# Simplified update endpoint for partial or full maintenance record updates
+@api_blueprint.route('/maintenance/<string:record_id>', methods=['PUT', 'PATCH'])
+@api_login_required
+@handle_malformed_json
+def update_maintenance(record_id):
+    record = Maintenance.query.get_or_404(record_id)
+    data = request.get_json() or {}
+    # Update only provided fields; parse date if present
+    for key, value in data.items():
+        if key == 'date':
+            try:
+                record.date = datetime.strptime(value, '%Y-%m-%d')
+            except:
+                pass
+        elif hasattr(record, key):
+            setattr(record, key, value)
+    db.session.commit()
+    return success_response(data=record.to_dict(), message='Maintenance record updated')
+
+# Delete maintenance record
+@api_blueprint.route('/maintenance/<string:record_id>', methods=['DELETE'])
+@api_login_required
+def delete_maintenance(record_id):
+    record = Maintenance.query.get_or_404(record_id)
+    db.session.delete(record)
+    db.session.commit()
+    return success_response(message='Maintenance record deleted')
 
 # User routes
 @api_blueprint.route('/users', methods=['GET'])
@@ -300,7 +336,6 @@ def api_users():
 
 # Alert routes
 @api_blueprint.route('/alerts', methods=['GET'])
-@api_staff_required
 @handle_api_error
 def api_alerts():
     """Get all alerts."""

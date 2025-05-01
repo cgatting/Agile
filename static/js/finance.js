@@ -8,6 +8,10 @@ class FinanceManager {
         this.invoices = [];
         this.mutualAidTransactions = [];
         this.partners = [];
+        // Initialize chart instance references
+        this.revenueChart = null;
+        this.balanceChart = null;
+        this.statusChart = null;
         this.initializeData();
         this.initializeEventListeners();
     }
@@ -103,10 +107,24 @@ class FinanceManager {
         // Form submission
         const invoiceForm = document.getElementById('invoiceForm');
         if (invoiceForm) {
-            invoiceForm.addEventListener('submit', (e) => {
+            // Remove any existing listeners
+            const newInvoiceForm = invoiceForm.cloneNode(true);
+            invoiceForm.parentNode.replaceChild(newInvoiceForm, invoiceForm);
+            
+            // Add submit event listener to the form
+            newInvoiceForm.addEventListener('submit', (e) => {
                 e.preventDefault();
                 this.submitInvoice();
             });
+
+            // Add click handler for the Create Invoice button
+            const createButton = document.querySelector('#invoiceModal .btn-primary');
+            if (createButton) {
+                createButton.onclick = (e) => {
+                    e.preventDefault();
+                    this.submitInvoice();
+                };
+            }
         }
 
         const mutualAidForm = document.getElementById('mutualAidForm');
@@ -144,6 +162,17 @@ class FinanceManager {
                 this.exportData(format);
             }
         });
+
+        // New Invoice button
+        const newInvoiceBtn = document.getElementById('newInvoiceBtn');
+        if (newInvoiceBtn) {
+            newInvoiceBtn.addEventListener('click', () => this.recordInvoice());
+        }
+        // Refresh Financial Overview
+        const refreshBtn = document.getElementById('refreshFinancialData');
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', () => this.updateDisplay());
+        }
     }
 
     updateDisplay() {
@@ -161,34 +190,29 @@ class FinanceManager {
             
             // Calculate total revenue
             const totalRevenue = this.invoices
-                .filter(invoice => invoice.issueDate.startsWith(month.substring(0, 7)))
+                .filter(invoice => invoice.issue_date.startsWith(month))
                 .reduce((sum, invoice) => sum + invoice.amount, 0);
             
             // Calculate expenses (for demo purposes, we'll use 70% of revenue)
             const expenses = totalRevenue * 0.7;
             
-            // Calculate profit
-            const profit = totalRevenue - expenses;
-            
+            // Operating costs equals expenses
+
             // Count outstanding invoices
             const outstandingInvoices = this.invoices
                 .filter(invoice => invoice.status === 'pending' || invoice.status === 'overdue')
                 .reduce((sum, invoice) => sum + invoice.amount, 0);
             
             // Calculate mutual aid balance
-            const mutualAidBalance = this.partners.reduce((sum, partner) => sum + partner.balance, 0);
+            const mutualAidBalance = this.partners.reduce((sum, partner) => sum + (partner.balance || 0), 0);
             
             // Update UI with calculations
             if (document.getElementById('totalRevenue')) {
                 document.getElementById('totalRevenue').textContent = totalRevenue.toLocaleString();
             }
             
-            if (document.getElementById('totalExpenses')) {
-                document.getElementById('totalExpenses').textContent = expenses.toLocaleString();
-            }
-            
-            if (document.getElementById('totalProfit')) {
-                document.getElementById('totalProfit').textContent = profit.toLocaleString();
+            if (document.getElementById('operatingCosts')) {
+                document.getElementById('operatingCosts').textContent = expenses.toLocaleString();
             }
             
             if (document.getElementById('outstandingInvoices')) {
@@ -221,22 +245,24 @@ class FinanceManager {
         const searchTerm = document.getElementById('invoiceSearchInput')?.value?.toLowerCase() || '';
         
         // Filter invoices
-        const filteredInvoices = this.invoices.filter(invoice => {
-            const matchesStatus = statusFilter === 'all' || invoice.status === statusFilter;
-            const matchesSearch = 
-                invoice.client.toLowerCase().includes(searchTerm) || 
-                invoice.invoiceNumber.toLowerCase().includes(searchTerm);
+        const filteredInvoices = this.invoices.filter(inv => {
+            const matchesStatus = statusFilter === 'all' || inv.status === statusFilter;
+            const clientName = inv.client_name || inv.client || '';
+            const invoiceNum = inv.invoice_number || inv.invoiceNumber || '';
+            const matchesSearch =
+                clientName.toLowerCase().includes(searchTerm) ||
+                invoiceNum.toLowerCase().includes(searchTerm);
             return matchesStatus && matchesSearch;
         });
 
         filteredInvoices.forEach(invoice => {
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td>${invoice.invoiceNumber}</td>
-                <td>${invoice.client}</td>
+                <td>${invoice.invoice_number || invoice.invoiceNumber}</td>
+                <td>${invoice.client_name || invoice.client}</td>
                 <td>£${invoice.amount.toLocaleString()}</td>
-                <td>${invoice.issueDate}</td>
-                <td>${invoice.dueDate}</td>
+                <td>${invoice.issue_date ? invoice.issue_date.split('T')[0] : invoice.issueDate}</td>
+                <td>${invoice.due_date || invoice.dueDate}</td>
                 <td>
                     <span class="status-badge status-${invoice.status}">
                         ${invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
@@ -259,6 +285,13 @@ class FinanceManager {
             button.addEventListener('click', () => {
                 const invoiceId = button.getAttribute('data-id');
                 this.viewInvoiceDetails(invoiceId);
+            });
+        });
+        // Add event listeners for download-invoice buttons
+        document.querySelectorAll('.download-invoice').forEach(button => {
+            button.addEventListener('click', () => {
+                const invoiceId = button.getAttribute('data-id');
+                window.downloadInvoice(invoiceId);
             });
         });
     }
@@ -320,25 +353,135 @@ class FinanceManager {
     }
 
     viewInvoiceDetails(invoiceId) {
-        const invoice = this.invoices.find(inv => inv.id == invoiceId);
+        const invoice = this.invoices.find(inv => inv.id === invoiceId);
         if (!invoice) return;
-        
-        // Populate modal with invoice details
-        document.getElementById('modalInvoiceNumber').textContent = invoice.invoiceNumber;
-        document.getElementById('modalInvoiceClient').textContent = invoice.client;
+
+        // Force cleanup of any existing modals and backdrops
+        const existingModals = document.querySelectorAll('.modal');
+        existingModals.forEach(modal => {
+            const instance = bootstrap.Modal.getInstance(modal);
+            if (instance) {
+                instance.dispose();
+            }
+        });
+        document.querySelectorAll('.modal-backdrop').forEach(backdrop => backdrop.remove());
+        document.body.classList.remove('modal-open');
+        document.body.style.overflow = '';
+        document.body.style.paddingRight = '';
+
+        // Hide form and show details view
+        document.getElementById('invoiceForm').style.display = 'none';
+        const detailsView = document.getElementById('invoiceDetailsView');
+        detailsView.style.display = 'block';
+
+        // Populate details
+        document.getElementById('modalInvoiceNumber').textContent = invoice.number || invoice.invoice_number;
+        document.getElementById('modalInvoiceClient').textContent = invoice.clientName || invoice.client_name || invoice.client;
         document.getElementById('modalInvoiceAmount').textContent = `£${invoice.amount.toLocaleString()}`;
-        document.getElementById('modalInvoiceIssueDate').textContent = invoice.issueDate;
-        document.getElementById('modalInvoiceDueDate').textContent = invoice.dueDate;
-        document.getElementById('modalInvoiceStatus').textContent = invoice.status;
+        document.getElementById('modalInvoiceIssueDate').textContent = invoice.issueDate || invoice.issue_date;
+        document.getElementById('modalInvoiceDueDate').textContent = invoice.dueDate || invoice.due_date;
+        document.getElementById('modalInvoiceStatus').textContent = invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1);
         document.getElementById('modalInvoiceNotes').textContent = invoice.notes || 'No notes available';
-        
-        // Show modal
-        document.getElementById('invoiceModal').style.display = 'block';
+
+        // Get modal element
+        const modalEl = document.getElementById('invoiceModal');
+        if (!modalEl) {
+            console.error('Invoice modal element not found');
+            return;
+        }
+
+        // Create new modal instance with modified configuration
+        const modalInstance = new bootstrap.Modal(modalEl, {
+            backdrop: false,  // Disable Bootstrap's built-in backdrop
+            keyboard: true,
+            focus: true
+        });
+
+        // Add custom backdrop
+        const customBackdrop = document.createElement('div');
+        customBackdrop.className = 'custom-modal-backdrop';
+        customBackdrop.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1040;
+            pointer-events: none;
+        `;
+        document.body.appendChild(customBackdrop);
+
+        // Set up cleanup
+        modalEl.addEventListener('hidden.bs.modal', () => {
+            customBackdrop.remove();
+            document.body.classList.remove('modal-open');
+            document.body.style.overflow = '';
+            document.body.style.paddingRight = '';
+        }, { once: true });
+
+        // Show the modal
+        modalInstance.show();
     }
 
     recordInvoice() {
+        // Force cleanup of any existing modals and backdrops
+        const existingModals = document.querySelectorAll('.modal');
+        existingModals.forEach(modal => {
+            const instance = bootstrap.Modal.getInstance(modal);
+            if (instance) {
+                instance.dispose();
+            }
+        });
+        document.querySelectorAll('.modal-backdrop').forEach(backdrop => backdrop.remove());
+        document.body.classList.remove('modal-open');
+        document.body.style.overflow = '';
+        document.body.style.paddingRight = '';
+
+        // Reset form and toggle views
         document.getElementById('invoiceForm').reset();
-        document.getElementById('invoiceModal').style.display = 'block';
+        document.getElementById('invoiceForm').style.display = 'block';
+        document.getElementById('invoiceDetailsView').style.display = 'none';
+
+        // Get modal element
+        const modalEl = document.getElementById('invoiceModal');
+        if (!modalEl) {
+            console.error('Invoice modal element not found');
+            return;
+        }
+
+        // Create new modal instance with modified configuration
+        const modalInstance = new bootstrap.Modal(modalEl, {
+            backdrop: false,  // Disable Bootstrap's built-in backdrop
+            keyboard: true,
+            focus: true
+        });
+
+        // Add custom backdrop
+        const customBackdrop = document.createElement('div');
+        customBackdrop.className = 'custom-modal-backdrop';
+        customBackdrop.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1040;
+            pointer-events: none;
+        `;
+        document.body.appendChild(customBackdrop);
+
+        // Set up cleanup
+        modalEl.addEventListener('hidden.bs.modal', () => {
+            customBackdrop.remove();
+            document.body.classList.remove('modal-open');
+            document.body.style.overflow = '';
+            document.body.style.paddingRight = '';
+        }, { once: true });
+
+        // Show the modal
+        modalInstance.show();
     }
 
     recordMutualAid() {
@@ -347,35 +490,58 @@ class FinanceManager {
     }
 
     async submitInvoice() {
-        const form = document.getElementById('invoiceForm');
-        if (!form.checkValidity()) {
-            form.reportValidity();
-            return;
-        }
-
-        // Collect form data
-        const invoiceData = {
-            invoiceNumber: form.elements['invoiceNumber'].value,
-            client: form.elements['client'].value,
-            amount: parseFloat(form.elements['amount'].value),
-            issueDate: form.elements['issueDate'].value,
-            dueDate: form.elements['dueDate'].value,
-            status: 'pending',
-            notes: form.elements['notes'].value
-        };
-
         try {
-            // In a real application, this would be sent to the server
+            const form = document.getElementById('invoiceForm');
+            if (!form) {
+                console.error('Invoice form not found');
+                return;
+            }
+
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
+            // Collect form data
+            const formData = new FormData(form);
+            const invoiceData = {
+                invoiceNumber: formData.get('invoiceNumber') || `INV-${new Date().getTime()}`,
+                client: formData.get('client'),
+                amount: parseFloat(formData.get('amount')),
+                issueDate: formData.get('issueDate') || new Date().toISOString().split('T')[0],
+                dueDate: formData.get('dueDate'),
+                status: 'pending',
+                notes: formData.get('notes') || '',
+                id: `inv_${new Date().getTime()}`  // Generate a unique ID
+            };
+
+            // Validate required fields
+            if (!invoiceData.client || !invoiceData.amount || !invoiceData.dueDate) {
+                this.showNotification('Please fill in all required fields', 'error');
+                return;
+            }
+
             console.log('Submitting invoice:', invoiceData);
             
-            // Add to local array for now (in production, this would come from API after successful submission)
+            // Add to local array (in production, this would be an API call)
             this.invoices.push(invoiceData);
+            
+            // Update the display
             this.updateInvoicesList();
+            this.updateFinancialOverview();
+            
+            // Show success message
+            this.showNotification('Invoice created successfully', 'success');
+            
+            // Close the modal
             this.closeModal('invoiceModal');
-            this.showNotification('Invoice created successfully');
+            
+            // Reset the form
+            form.reset();
+            
         } catch (error) {
             console.error('Error submitting invoice:', error);
-            this.showNotification('Failed to create invoice', 'error');
+            this.showNotification('Failed to create invoice: ' + error.message, 'error');
         }
     }
 
@@ -413,7 +579,39 @@ class FinanceManager {
     }
 
     closeModal(modalId) {
-        document.getElementById(modalId).style.display = 'none';
+        try {
+            // Get the modal element
+            const modalEl = document.getElementById(modalId);
+            if (!modalEl) return;
+
+            // Remove custom backdrop if it exists
+            const customBackdrop = document.querySelector('.custom-modal-backdrop');
+            if (customBackdrop) {
+                customBackdrop.remove();
+            }
+
+            // Remove any Bootstrap backdrops
+            document.querySelectorAll('.modal-backdrop').forEach(backdrop => backdrop.remove());
+
+            // Get and dispose of the modal instance
+            const modalInstance = bootstrap.Modal.getInstance(modalEl);
+            if (modalInstance) {
+                modalInstance.hide();
+                modalInstance.dispose();
+            }
+
+            // Clean up modal-related classes and styles
+            document.body.classList.remove('modal-open');
+            document.body.style.overflow = '';
+            document.body.style.paddingRight = '';
+        } catch (error) {
+            console.error('Error closing modal:', error);
+            // Fallback cleanup
+            document.querySelectorAll('.modal-backdrop, .custom-modal-backdrop').forEach(el => el.remove());
+            document.body.classList.remove('modal-open');
+            document.body.style.overflow = '';
+            document.body.style.paddingRight = '';
+        }
     }
 
     showNotification(message, type = 'success') {
@@ -444,19 +642,14 @@ class FinanceManager {
             let data;
             let filename;
             
-            // Get data based on active tab
-            const activeTab = document.querySelector('.nav-link.active');
-            if (!activeTab) {
-                throw new Error('No active tab found');
-            }
-
-            const tabId = activeTab.getAttribute('href');
-            if (!tabId) {
-                throw new Error('Tab ID not found');
-            }
-
-            // Remove the # from href
-            const cleanTabId = tabId.replace('#', '');
+            // Determine active finance tab
+            const tabNav = document.getElementById('financeTab');
+            const activeTabBtn = tabNav.querySelector('.nav-link.active');
+            if (!activeTabBtn) throw new Error('No active finance tab found');
+            // Use data-bs-target to identify pane
+            let selector = activeTabBtn.getAttribute('data-bs-target') || activeTabBtn.getAttribute('href');
+            if (!selector) throw new Error('Active tab target not found');
+            const cleanTabId = selector.replace('#', '');
             
             // Get current date for filename
             const currentDate = new Date().toISOString().split('T')[0];
@@ -618,14 +811,18 @@ class FinanceManager {
 
     initializeCharts() {
         console.log('Initializing charts with real data...');
-        
+        // Destroy previous chart instances to avoid canvas reuse errors
+        if (this.revenueChart) this.revenueChart.destroy();
+        if (this.balanceChart) this.balanceChart.destroy();
+        if (this.statusChart) this.statusChart.destroy();
+
         // Get canvas contexts
         const revenueChartCtx = document.getElementById('revenueChart')?.getContext('2d');
         const balanceChartCtx = document.getElementById('balanceChart')?.getContext('2d');
         const statusChartCtx = document.getElementById('statusChart')?.getContext('2d');
         
         if (!revenueChartCtx || !balanceChartCtx) {
-            console.warn('Chart canvas elements not found');
+            console.warn('Revenue or balance chart canvas not found, skipping chart init');
             return;
         }
         
@@ -634,33 +831,20 @@ class FinanceManager {
             console.log('Chart.js not loaded, loading dynamically...');
             return;
         }
-        
+
+        // Hide loading indicators
+        document.querySelectorAll('.chart-loading').forEach(loader => loader.style.display = 'none');
+
         // Show chart containers
-        document.querySelectorAll('.chart-container').forEach(container => {
-            container.style.display = 'block';
-        });
+        document.querySelectorAll('.chart-container').forEach(container => container.style.display = 'block');
         
         // Generate data for revenue chart (last 6 months)
         const months = ['Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr']; // Last 6 months, ending in current month (Apr 2025)
-        
-        // Calculate revenue by month from actual invoice data
         const revenue = [12000, 14500, 18000, 22500, 26000, 0]; // Example data
         const expenses = [8500, 11000, 13000, 16500, 19000, 0]; // Example data
         
-        // In a real application, we would calculate these from the invoice data:
-        // const revenue = months.map(month => {
-        //     // Get month index (0-11)
-        //     const monthIndex = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].indexOf(month);
-        //     // Map to year-month format (assuming current year)
-        //     const yearMonth = `2025-${(monthIndex + 1).toString().padStart(2, '0')}`;
-        //     // Sum invoices for this month
-        //     return this.invoices
-        //         .filter(invoice => invoice.issueDate.startsWith(yearMonth))
-        //         .reduce((sum, invoice) => sum + invoice.amount, 0);
-        // });
-        
         // Draw revenue vs expenses chart
-        new Chart(revenueChartCtx, {
+        this.revenueChart = new Chart(revenueChartCtx, {
             type: 'bar',
             data: {
                 labels: months,
@@ -697,23 +881,21 @@ class FinanceManager {
         });
         
         // Draw mutual aid balance chart - using real partner data
-        const balanceData = {
-            labels: this.partners.map(p => p.name),
-            datasets: [{
-                data: this.partners.map(p => Math.abs(p.balance)),
-                backgroundColor: [
-                    'rgba(54, 162, 235, 0.7)',
-                    'rgba(255, 99, 132, 0.7)',
-                    'rgba(255, 206, 86, 0.7)',
-                    'rgba(75, 192, 192, 0.7)'
-                ],
-                borderWidth: 1
-            }]
-        };
-        
-        new Chart(balanceChartCtx, {
+        this.balanceChart = new Chart(balanceChartCtx, {
             type: 'doughnut',
-            data: balanceData,
+            data: {
+                labels: this.partners.map(p => p.name),
+                datasets: [{
+                    data: this.partners.map(p => Math.abs(p.balance)),
+                    backgroundColor: [
+                        'rgba(54, 162, 235, 0.7)',
+                        'rgba(255, 99, 132, 0.7)',
+                        'rgba(255, 206, 86, 0.7)',
+                        'rgba(75, 192, 192, 0.7)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
             options: {
                 responsive: true,
                 plugins: {
@@ -733,7 +915,6 @@ class FinanceManager {
         
         // Add invoice status chart if element exists
         if (statusChartCtx) {
-            // Count invoices by status
             const statusCounts = {
                 paid: this.invoices.filter(i => i.status === 'paid').length,
                 pending: this.invoices.filter(i => i.status === 'pending').length,
@@ -741,7 +922,7 @@ class FinanceManager {
             };
             
             // Create status chart
-            new Chart(statusChartCtx, {
+            this.statusChart = new Chart(statusChartCtx, {
                 type: 'pie',
                 data: {
                     labels: ['Paid', 'Pending', 'Overdue'],
@@ -771,10 +952,9 @@ class FinanceManager {
 }
 
 // Initialize finance manager when the page loads
-let financeManager;
 document.addEventListener('DOMContentLoaded', () => {
     console.log('DOM loaded, initializing finance manager...');
-    financeManager = new FinanceManager();
+    window.financeManager = new FinanceManager();
     
     // Load Chart.js dynamically if needed
     if (typeof Chart === 'undefined') {
@@ -783,8 +963,25 @@ document.addEventListener('DOMContentLoaded', () => {
         script.src = 'https://cdn.jsdelivr.net/npm/chart.js';
         script.onload = () => {
             console.log('Chart.js loaded successfully');
-            financeManager.initializeCharts();
+            window.financeManager.initializeCharts();
         };
         document.head.appendChild(script);
+    } else {
+        // Chart.js already loaded, initialize charts immediately
+        window.financeManager.initializeCharts();
     }
 });
+
+// Global stub for viewing partner details
+window.viewPartner = function(id) {
+    const partner = window.financeManager.partners.find(p => p.id === id);
+    if (partner) {
+        alert(`Partner: ${partner.name}\nContact: ${partner.contact_person}\nEmail: ${partner.email}`);
+    }
+};
+
+// Global stub for downloading invoice
+window.downloadInvoice = function(id) {
+    // Redirect to invoice download or preview
+    window.open(`/finance/invoices/${id}`, '_blank');
+};
